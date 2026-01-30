@@ -1,0 +1,9 @@
+{
+  "name": "Portal CUIDI",
+  "description": "Plataforma Federada de Regulação Assistencial do SUS com foco em LGPD, Governança Territorial e Interoperabilidade.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
