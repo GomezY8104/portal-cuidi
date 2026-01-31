@@ -11,6 +11,7 @@ import { useAppStore } from '../../store/useAppStore';
 export const ProviderFeedbackPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { addNotification } = useAppStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export const ProviderFeedbackPage: React.FC = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      alert('Veredito assistencial publicado com sucesso no Ledger Federado.');
+      addNotification({ type: 'success', message: 'Veredito assistencial publicado com sucesso no Ledger Federado.' });
       navigate('/provider');
     }, 2000);
   };

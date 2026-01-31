@@ -105,7 +105,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         }`}
       >
         <div className="p-3 flex items-center justify-center border-b border-slate-800 h-16 shrink-0">
-          <CuidiLogo size={sidebarCollapsed ? 30 : 70} />
+          <CuidiLogo size={sidebarCollapsed ? 30 : 70} inverted />
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-1 mt-2 custom-scrollbar">

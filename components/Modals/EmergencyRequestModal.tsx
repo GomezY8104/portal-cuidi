@@ -1,15 +1,19 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { X, Siren, AlertTriangle, CheckCircle, Activity, Ambulance } from 'lucide-react';
 
 export const EmergencyRequestModal: React.FC = () => {
-  const { closeModal, modalData, updateUpaCaseStatus } = useAppStore();
+  const { closeModal, modalData, updateUpaCaseStatus, addNotification } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [justification, setJustification] = useState('');
 
   const handleRequest = () => {
-    if (!justification) return alert('A justificativa de risco iminente é obrigatória.');
+    if (!justification) {
+        addNotification({ type: 'error', message: 'A justificativa de risco iminente é obrigatória.' });
+        return;
+    }
     
     setLoading(true);
     setTimeout(() => {

@@ -43,6 +43,7 @@ const SEGMENTS = [
 ];
 
 export const LocalPoliciesPage: React.FC = () => {
+  const { addNotification, openModal } = useAppStore(); // Hooks
   // --- ESTADOS ---
   const [activeSegment, setActiveSegment] = useState<SegmentType>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -128,11 +129,11 @@ export const LocalPoliciesPage: React.FC = () => {
 
   const handleSave = () => {
     if (!formData.targetName && formData.scope === 'SPECIFIC_NODE') {
-      alert('Por favor, defina o nome do nó específico.');
+      addNotification({ type: 'warning', message: 'Por favor, defina o nome do nó específico.' });
       return;
     }
     if ((formData.permissions || []).length === 0) {
-      alert('Selecione ao menos uma permissão.');
+      addNotification({ type: 'warning', message: 'Selecione ao menos uma permissão.' });
       return;
     }
 
@@ -153,21 +154,30 @@ export const LocalPoliciesPage: React.FC = () => {
 
     if (editingId) {
       setPolicies(prev => prev.map(p => p.id === editingId ? { ...p, ...payload } : p));
+      addNotification({ type: 'success', message: 'Política atualizada e propagada.' });
     } else {
       const newId = `POL-${Math.floor(Math.random() * 10000)}`;
       setPolicies(prev => [{ ...payload, id: newId }, ...prev]);
+      addNotification({ type: 'success', message: 'Nova política de governança criada.' });
     }
     setIsModalOpen(false);
   };
 
   const handleRevoke = (id: string) => {
-    if (confirm('Tem certeza que deseja revogar esta política? O acesso será bloqueado imediatamente para este alvo.')) {
-      setPolicies(prev => prev.map(p => p.id === id ? { ...p, status: 'REVOKED', lastUpdate: new Date().toLocaleDateString() } : p));
-    }
+    openModal('ConfirmationModal', {
+      title: 'Revogar Política',
+      message: 'Tem certeza que deseja revogar esta política? O acesso será bloqueado imediatamente para este alvo.',
+      type: 'danger',
+      onConfirm: () => {
+        setPolicies(prev => prev.map(p => p.id === id ? { ...p, status: 'REVOKED', lastUpdate: new Date().toLocaleDateString() } : p));
+        addNotification({ type: 'warning', message: 'Política revogada. Acesso bloqueado.' });
+      }
+    });
   };
 
   const handleReactivate = (id: string) => {
     setPolicies(prev => prev.map(p => p.id === id ? { ...p, status: 'ACTIVE', lastUpdate: new Date().toLocaleDateString() } : p));
+    addNotification({ type: 'success', message: 'Política reativada.' });
   };
 
   return (
@@ -329,12 +339,11 @@ export const LocalPoliciesPage: React.FC = () => {
          </table>
       </div>
 
-      {/* --- MODAL DE EDICIÓN --- */}
+      {/* --- MODAL DE EDICIÓN (Mantido estrutura, removido alerts se houvesse) --- */}
       {isModalOpen && (
          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
             <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-               
-               {/* Header Modal */}
+               {/* ... (Conteúdo do Modal permanece, lógica de save já atualizada acima) ... */}
                <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                   <div className="flex items-center gap-4">
                      <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">
@@ -352,7 +361,6 @@ export const LocalPoliciesPage: React.FC = () => {
                   <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
                </div>
 
-               {/* Body Modal */}
                <div className="p-8 overflow-y-auto custom-scrollbar space-y-8 flex-1">
                   
                   {/* SECCION 1: DEFINICION DEL ALVO */}

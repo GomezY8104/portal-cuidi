@@ -4,28 +4,29 @@ import {
   GitPullRequest, MessageSquare, Clock, CheckCircle, 
   AlertCircle, Activity, Building2, 
   UploadCloud, Search, Globe, Database, ArrowUpRight,
-  MessageCircle, Mail, FilePlus, Eye
+  MessageCircle, Mail, FilePlus, Eye, List
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { MOCK_DOC_REQUESTS, MOCK_PROVIDER_CASES } from '../../mocks/seed';
 
 export const RegulationCasesPage: React.FC = () => {
-  const { openDrawer, user } = useAppStore();
+  const { openDrawer, user, patientDocRequests, patientCases } = useAppStore(); // Usa dados do Store
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('ALL'); // ALL, CASE, DOC_REQ
+  
+  // Abas de Estado
+  const [activeTab, setActiveTab] = useState<'PENDENCIAS' | 'ENCAMINHAMENTO' | 'CONCLUIDOS'>('PENDENCIAS');
 
-  // --- OBTENER CASOS DEL MOCK CENTRALIZADO ---
+  // --- FILTRAR MEUS CASOS ---
   const myCases = useMemo(() => {
-      // Para efeitos de DEMO, se sou admin mostro tudo, se sou paciente mostro os meus (simulado)
+      // Filtra casos onde o usuário é o paciente
       if (user?.role === 'PATIENT') {
-          return MOCK_PROVIDER_CASES.filter(c => c.patientName.toUpperCase() === user.name.toUpperCase() || c.patientId === user.id);
+          return patientCases.filter(c => c.patientName.toUpperCase() === user.name.toUpperCase() || c.patientId === user.id);
       }
-      return MOCK_PROVIDER_CASES.filter(c => c.patientId === 'p1'); // Fallback visual
-  }, [user]);
+      return patientCases.filter(c => c.patientId === 'p1'); // Fallback para dev
+  }, [user, patientCases]);
 
-  // Transformar datos del Mock al formato de la vista
+  // Formatar Casos
   const casesFormatted = myCases.map(c => ({
     id: c.id,
     type: 'CASE',
@@ -36,7 +37,9 @@ export const RegulationCasesPage: React.FC = () => {
     statusLabel: c.status.replace(/_/g, ' '),
     entity: c.entity || c.origin,
     priority: c.priority,
-    // Lógica para saber si requiere anexo (ejemplo: status specificos o flag manual)
+    // Casos que estão "Devolvidos" ou "Pendente de Doc" vão para pendências
+    isActionRequired: c.status === 'DEVOLVIDO' || c.status === 'PENDING_DOCS',
+    isFinished: c.status === 'FINALIZADO' || c.status === 'RECUSADO' || c.status === 'ALTA' || c.status === 'COMPLETED',
     requiresAttachment: c.status === 'PENDING_DOCS' || c.status === 'EM_ANALISE', 
     timeline: [], 
     messages: c.messages || [],
@@ -44,8 +47,8 @@ export const RegulationCasesPage: React.FC = () => {
     appointment: c.appointment 
   }));
 
-  // --- MOCK DATA: DOCUMENTOS ---
-  const docRequests = MOCK_DOC_REQUESTS.map(req => ({
+  // Formatar Solicitações de Documentos (Sempre Pendências)
+  const docRequests = patientDocRequests.map(req => ({
     id: req.id,
     type: 'DOC_REQ',
     title: req.documentType,
@@ -55,25 +58,40 @@ export const RegulationCasesPage: React.FC = () => {
     statusLabel: 'Documento Pendente',
     entity: req.requester,
     priority: req.priority,
-    requiresAttachment: true, // Solicitudes de documentos siempre requieren anexo
+    isActionRequired: true,
+    isFinished: false,
+    requiresAttachment: true,
     originalData: req,
     timeline: [],
     messages: [],
     hasMessages: true 
   }));
 
-  // --- MERGE & FILTER ---
-  const unifiedList = useMemo(() => {
+  // --- MERGE & FILTER POR ABA ---
+  const filteredList = useMemo(() => {
     const combined = [...docRequests, ...casesFormatted];
     
-    return combined.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.entity.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = filterType === 'ALL' || item.type === filterType;
-      return matchesSearch && matchesType;
+    // Filtro de Texto
+    const textFiltered = combined.filter(item => {
+      return item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+             item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             item.entity.toLowerCase().includes(searchTerm.toLowerCase());
     });
-  }, [searchTerm, filterType, casesFormatted]);
+
+    // Filtro por Aba
+    return textFiltered.filter(item => {
+        if (activeTab === 'PENDENCIAS') {
+            return item.isActionRequired; 
+        }
+        if (activeTab === 'ENCAMINHAMENTO') {
+            return !item.isActionRequired && !item.isFinished;
+        }
+        if (activeTab === 'CONCLUIDOS') {
+            return item.isFinished;
+        }
+        return true;
+    });
+  }, [searchTerm, activeTab, casesFormatted, docRequests]);
 
   const getPriorityColor = (priority: string) => {
     if (priority === 'ALTA' || priority === 'EMERGÊNCIA') return 'text-red-700 bg-red-50 border-red-200';
@@ -91,8 +109,11 @@ export const RegulationCasesPage: React.FC = () => {
     if (item.status === 'AGENDADO') {
         return <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 uppercase tracking-wide"><CheckCircle size={12}/> Agendado</span>;
     }
-    if (item.status === 'RECEBIDO') {
+    if (item.status === 'RECEBIDO' || item.status === 'IN_CARE') {
         return <span className="flex items-center gap-1.5 text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-1 rounded border border-purple-200 uppercase tracking-wide"><Activity size={12}/> Em Atendimento</span>;
+    }
+    if (item.status === 'FINALIZADO' || item.status === 'COMPLETED') {
+        return <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200 uppercase tracking-wide"><CheckCircle size={12}/> Concluído</span>;
     }
     return <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded border border-slate-200 uppercase tracking-wide">{item.status}</span>;
   };
@@ -100,23 +121,25 @@ export const RegulationCasesPage: React.FC = () => {
   // --- ACTIONS HANDLERS ---
 
   const handleTrack = (item: any) => {
-    // Abre Drawer na aba padrão (Resumo)
     openDrawer('CaseSummaryDrawer', { ...item, initialTab: 'RESUMO' });
   };
 
   const handleAttach = (item: any) => {
     if (item.type === 'DOC_REQ') {
+      // Passa o ID da requisição para o Drawer saber o que resolver
       openDrawer('UploadDocumentDrawer', { requestId: item.id, type: item.title });
     } else {
-      // Se for um caso geral pedindo anexo, abre drawer de upload genérico vinculado ao caso
       openDrawer('UploadDocumentDrawer', { requestId: item.id, type: 'Documento Complementar' });
     }
   };
 
   const handleMessageClick = (item: any) => {
-    // Abre Drawer diretamente na aba de CHAT
     openDrawer('CaseSummaryDrawer', { ...item, initialTab: 'CHAT' });
   };
+
+  // Counts for tabs
+  const countPendencias = [...docRequests, ...casesFormatted].filter(i => i.isActionRequired).length;
+  const countEncaminhamento = casesFormatted.filter(i => !i.isActionRequired && !i.isFinished).length;
 
   return (
     <div className="space-y-6 animate-fade-in-up pb-20 max-w-7xl mx-auto">
@@ -140,32 +163,35 @@ export const RegulationCasesPage: React.FC = () => {
         </button>
       </div>
 
+      {/* TABS DE NAVEGAÇÃO */}
+      <div className="flex p-1 bg-slate-100 rounded-xl w-fit">
+         <button 
+            onClick={() => setActiveTab('PENDENCIAS')}
+            className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'PENDENCIAS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+         >
+            Pendências
+            {countPendencias > 0 && <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{countPendencias}</span>}
+         </button>
+         <button 
+            onClick={() => setActiveTab('ENCAMINHAMENTO')}
+            className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'ENCAMINHAMENTO' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+         >
+            Encaminhamentos
+            {countEncaminhamento > 0 && <span className="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded-full">{countEncaminhamento}</span>}
+         </button>
+         <button 
+            onClick={() => setActiveTab('CONCLUIDOS')}
+            className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'CONCLUIDOS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+         >
+            Concluídos
+         </button>
+      </div>
+
       {/* ÁREA DE CONTROLE E TABELA */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col">
          
-         {/* TOOLBAR */}
-         <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-50/50 rounded-t-xl">
-            <div className="flex items-center gap-2">
-               <button 
-                 onClick={() => setFilterType('ALL')}
-                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'ALL' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-200'}`}
-               >
-                 Todos
-               </button>
-               <button 
-                 onClick={() => setFilterType('CASE')}
-                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'CASE' ? 'bg-white border border-slate-300 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
-               >
-                 Encaminhamentos
-               </button>
-               <button 
-                 onClick={() => setFilterType('DOC_REQ')}
-                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'DOC_REQ' ? 'bg-white border border-amber-300 text-amber-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
-               >
-                 Pendências
-               </button>
-            </div>
-
+         {/* TOOLBAR BUSCA */}
+         <div className="p-4 border-b border-slate-200 flex justify-end items-center bg-slate-50/50 rounded-t-xl">
             <div className="relative w-full md:w-80">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/>
                <input 
@@ -192,7 +218,7 @@ export const RegulationCasesPage: React.FC = () => {
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                  {unifiedList.map(item => (
+                  {filteredList.map(item => (
                      <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
                         
                         {/* TIPO */}
@@ -263,46 +289,30 @@ export const RegulationCasesPage: React.FC = () => {
                               </button>
 
                               {/* Botón Anexar (Condicional) */}
-                              <div className="flex gap-1 w-[140px]">
-                                <button 
-                                    onClick={() => handleAttach(item)}
-                                    disabled={!item.requiresAttachment}
-                                    className={`flex-1 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all flex items-center justify-center gap-1 shadow-sm border ${
-                                    item.requiresAttachment 
-                                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer' 
-                                    : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                                    }`}
-                                    title="Upload Local"
-                                >
-                                    <FilePlus size={12}/> Anexar
-                                </button>
-                                {/* BOTÓN "ANEXAR DA REDE" (Busca Federada) */}
-                                <button
-                                    onClick={() => navigate('/patient/documents')}
-                                    disabled={!item.requiresAttachment}
-                                    className={`px-2 py-1.5 rounded-lg transition-all shadow-sm border ${
-                                        item.requiresAttachment 
-                                        ? 'bg-white border-blue-600 text-blue-600 hover:bg-blue-50' 
-                                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                                    }`}
-                                    title="Anexar da Rede (Busca Federada)"
-                                >
-                                    <Globe size={14}/>
-                                </button>
-                              </div>
+                              {item.requiresAttachment && (
+                                <div className="flex gap-1 w-[140px]">
+                                    <button 
+                                        onClick={() => handleAttach(item)}
+                                        className="flex-1 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all flex items-center justify-center gap-1 shadow-sm border bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer"
+                                        title="Upload Local"
+                                    >
+                                        <FilePlus size={12}/> Anexar
+                                    </button>
+                                </div>
+                              )}
                            </div>
                         </td>
                      </tr>
                   ))}
                   
-                  {unifiedList.length === 0 && (
+                  {filteredList.length === 0 && (
                      <tr>
                         <td colSpan={7} className="py-16 text-center">
                            <div className="flex flex-col items-center gap-3">
                               <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                                 <Search size={20}/>
+                                 <List size={20}/>
                               </div>
-                              <p className="text-slate-500 font-medium text-sm">Nenhum processo encontrado.</p>
+                              <p className="text-slate-500 font-medium text-sm">Nenhum processo nesta fila.</p>
                            </div>
                         </td>
                      </tr>

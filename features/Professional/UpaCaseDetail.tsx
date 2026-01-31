@@ -28,7 +28,7 @@ type ClinicalStatus =
 export const UpaCaseDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user, openDrawer, openModal, attachedDocs, removeAttachedDoc, upaQueue, updateUpaCaseStatus, addUpaCase } = useAppStore();
+  const { user, openDrawer, openModal, attachedDocs, removeAttachedDoc, upaQueue, updateUpaCaseStatus, addUpaCase, addNotification } = useAppStore();
 
   // --- ESTADO DEL CASO CLÍNICO ---
   const [status, setStatus] = useState<ClinicalStatus>('IN_TRIAGE');
@@ -297,7 +297,7 @@ export const UpaCaseDetailPage: React.FC = () => {
 
   const handleSaveTriage = () => {
     if (!triage.pa || !triage.fc || triage.risk === 'INDEFINIDO') {
-      alert('Preencha os Sinais Vitais e a Classificação de Risco Manchester para concluir.');
+      addNotification({ type: 'warning', message: 'Preencha os Sinais Vitais e a Classificação de Risco Manchester para concluir.' });
       return;
     }
     
@@ -330,29 +330,33 @@ export const UpaCaseDetailPage: React.FC = () => {
 
   // DECISION HANDLERS - ATUALIZAM O STORE GLOBAL
   const handleDischarge = () => {
-    if (!medicalAssessment.cid) return alert('Obrigatório informar diagnóstico de alta (CID).');
+    if (!medicalAssessment.cid) return addNotification({ type: 'error', message: 'Obrigatório informar diagnóstico de alta (CID).' });
     
-    if (confirm('Confirmar ALTA MÉDICA deste paciente?')) {
-      setLoading(true);
-      
-      const dischargeStatus = `ALTA - CID: ${medicalAssessment.cid}`;
-      
-      addTimelineEvent('ALTA_MEDICA', `Diagnóstico: ${medicalAssessment.cid} - ${medicalAssessment.cidDesc}. Orient: ${dischargeExtras.instructions}`);
-      
-      setTimeout(() => {
-          setStatus('DISCHARGED');
-          ensureCaseInStore('DISCHARGED', undefined, dischargeStatus);
-          
-          setDecisionMode('NONE');
-          setLoading(false);
-          navigate('/upa');
-      }, 1500); 
-    }
+    openModal('ConfirmationModal', {
+        title: 'Alta Médica',
+        message: 'Confirmar ALTA MÉDICA deste paciente? O processo será encerrado.',
+        type: 'info',
+        onConfirm: () => {
+            setLoading(true);
+            const dischargeStatus = `ALTA - CID: ${medicalAssessment.cid}`;
+            
+            addTimelineEvent('ALTA_MEDICA', `Diagnóstico: ${medicalAssessment.cid} - ${medicalAssessment.cidDesc}. Orient: ${dischargeExtras.instructions}`);
+            
+            setTimeout(() => {
+                setStatus('DISCHARGED');
+                ensureCaseInStore('DISCHARGED', undefined, dischargeStatus);
+                
+                setDecisionMode('NONE');
+                setLoading(false);
+                navigate('/upa');
+            }, 1500); 
+        }
+    });
   };
 
   const handleRegulationFast = () => {
     if (!medicalAssessment.cid || !medicalAssessment.notes) {
-        alert('É obrigatório preencher as Notas Clínicas e o Diagnóstico Principal antes de solicitar Vaga Zero.');
+        addNotification({ type: 'warning', message: 'É obrigatório preencher as Notas Clínicas e o Diagnóstico Principal antes de solicitar Vaga Zero.' });
         return;
     }
     ensureCaseInStore('REGULATION', 'VERMELHO', 'Aguardando Vaga Zero');
@@ -365,7 +369,7 @@ export const UpaCaseDetailPage: React.FC = () => {
 
   const handleRegulationProtocol = () => {
     if (!medicalAssessment.cid) {
-        alert('Informe o CID Principal antes de iniciar o protocolo.');
+        addNotification({ type: 'warning', message: 'Informe o CID Principal antes de iniciar o protocolo.' });
         return;
     }
     ensureCaseInStore('REGULATION', undefined, 'Em Regulação');

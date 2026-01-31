@@ -1,6 +1,7 @@
 
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
+import { useAppStore } from '../store/useAppStore';
 
 /**
  * Gera e baixa um arquivo PDF válido.
@@ -77,7 +78,10 @@ export const downloadPDF = (filename: string, title: string, metadata: any, cont
  */
 export const downloadXLSX = (filename: string, data: any[]) => {
   if (!data || data.length === 0) {
-      alert("Sem dados para gerar Excel.");
+      useAppStore.getState().addNotification({ 
+        type: 'warning', 
+        message: "Sem dados disponíveis para gerar o relatório Excel." 
+      });
       return;
   }
   const ws = XLSX.utils.json_to_sheet(data);

@@ -5,7 +5,7 @@ import {
   Sparkles, Server, BarChart3, MessageSquare,
   Copy, Check, RefreshCw, HelpCircle, X, ArrowRight
 } from 'lucide-react';
-// El proxy Gemini ahora se consume vía fetch
+import { sendFederationMessage } from '../../services/geminiService';
 
 // Mock de dados do sistema para o Analista de Dados
 const MOCK_SYSTEM_SNAPSHOT = {
@@ -99,19 +99,7 @@ export const CodeAuditPage: React.FC = () => {
     // Seleciona os dados baseados no modo
     const contextData = mode === 'DATA_INSIGHTS' ? MOCK_SYSTEM_SNAPSHOT : null;
 
-    // Llama al backend proxy en vez de usar el SDK directamente
-    let aiResponseText = '';
-    try {
-      const resp = await fetch('http://localhost:3030/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg.text, mode, currentSystemData: contextData })
-      });
-      const data = await resp.json();
-      aiResponseText = data.text || "Não consegui processar sua solicitação.";
-    } catch (err) {
-      aiResponseText = "Não consegui processar sua solicitação.";
-    }
+    const aiResponseText = await sendFederationMessage(userMsg.text, mode, contextData);
 
     const aiMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),

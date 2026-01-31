@@ -7,7 +7,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
 
 export const ClinicalHistoryPage: React.FC = () => {
-  const { openDrawer } = useAppStore();
+  const { openDrawer, openModal, addNotification } = useAppStore();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPeriod, setFilterPeriod] = useState('ALL');
@@ -27,10 +27,16 @@ export const ClinicalHistoryPage: React.FC = () => {
   }, [searchTerm]);
 
   const handleViewOriginal = (item: any) => {
-      if(confirm('Você está acessando um documento original assinado. Esta ação ficará registrada no ledger. Continuar?')) {
-          alert('Abrindo documento...');
-          // Logic to open document
-      }
+      openModal('ConfirmationModal', {
+        title: 'Acesso Auditado',
+        message: 'Você está acessando um documento original assinado. Esta ação ficará registrada no ledger. Continuar?',
+        type: 'info',
+        onConfirm: () => {
+           addNotification({ type: 'info', message: 'Abrindo documento...' });
+           // Here you would trigger the document viewer
+           openDrawer('ClinicalDetailDrawer', item);
+        }
+      });
   };
 
   return (

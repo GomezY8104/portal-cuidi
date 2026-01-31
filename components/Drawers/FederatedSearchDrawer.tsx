@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { 
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 
 export const FederatedSearchDrawer: React.FC = () => {
-  const { closeDrawer, openDrawer, user, addAttachedDoc } = useAppStore(); // IMPORTANTE: traer addAttachedDoc
+  const { closeDrawer, openDrawer, user, addAttachedDoc, addNotification } = useAppStore();
   const [filter, setFilter] = useState({ node: 'ALL', spec: 'ALL', category: 'ALL' });
   const [search, setSearch] = useState('');
 
@@ -37,12 +38,11 @@ export const FederatedSearchDrawer: React.FC = () => {
 
   const handleAction = (doc: any) => {
     if (isPatient) {
-        alert('Documento solicitado para importação ao seu Portal Pessoal. O nó de origem será notificado.');
+        addNotification({ type: 'success', message: 'Documento solicitado para importação ao seu Portal Pessoal. O nó de origem será notificado.' });
     } else {
         // Lógica de profissional (anexar ao store global)
         addAttachedDoc(doc);
-        // Notificación visual rápida (opcional)
-        // alert(`Documento "${doc.name}" anexado ao prontuário.`);
+        addNotification({ type: 'info', message: `Documento "${doc.name}" anexado ao prontuário.` });
     }
     closeDrawer();
   };
@@ -110,7 +110,7 @@ export const FederatedSearchDrawer: React.FC = () => {
                 </td>
                 <td className="px-6 py-5">
                    <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2 truncate max-w-[150px]">
-                      <Building2 size={12}/> {doc.node}
+                      <Building2 size={12} className="text-slate-300"/> {doc.node}
                    </p>
                 </td>
                 <td className="px-6 py-5 text-right">

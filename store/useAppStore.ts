@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
 import { UserSession, UserRole } from '../types';
+import { MOCK_DOC_REQUESTS, MOCK_PROVIDER_CASES } from '../mocks/seed'; // Importar mocks para estado inicial
 
 // --- Interface de Notificação ---
 export interface Notification {
@@ -131,9 +132,15 @@ interface AppState {
   updateUpaCaseStatus: (id: string, stage: UpaCase['stage'], risk?: string, statusLabel?: string) => void;
   removeUpaCase: (id: string) => void;
 
+  // Patient Workflow State (NOVO)
+  patientDocRequests: any[];
+  patientCases: any[];
+  resolveDocRequest: (reqId: string) => void; // Ação para mover de Pendência para Histórico
+
   // Patient Consents State
   patientConsents: any[];
   patientRequests: any[];
+  addConsent: (consent: any) => void; // Nova ação
   revokeConsent: (id: string) => void;
   approveRequest: (req: any) => void;
   denyRequest: (id: string) => void;
@@ -298,6 +305,19 @@ export const useAppStore = create<AppState>((set) => ({
     removedCaseIds: [...state.removedCaseIds, id] 
   })),
 
+  // Patient Workflow State
+  patientDocRequests: MOCK_DOC_REQUESTS,
+  patientCases: MOCK_PROVIDER_CASES,
+  resolveDocRequest: (reqId) => set((state) => {
+    // 1. Remove da lista de pendências
+    const remainingRequests = state.patientDocRequests.filter(r => r.id !== reqId);
+    
+    // 2. Opcional: Poderia atualizar um caso associado se tivéssemos o link direto
+    // Aqui apenas removemos para simular que foi "resolvido/enviado"
+    
+    return { patientDocRequests: remainingRequests };
+  }),
+
   // Patient Consents Actions
   patientConsents: [
     { id: 'C1', inst: 'Hospital das Clínicas', segment: 'HOSPITAL', types: 'CLÍNICO, EXAMES', purpose: 'TRATAMENTO', validity: 'PERMANENTE' },
@@ -308,6 +328,10 @@ export const useAppStore = create<AppState>((set) => ({
     { id: 'R2', inst: 'Seguradora de Saúde', data: 'Laudos 2024', purpose: 'AUDITORIA', status: 'PENDENTE' }
   ],
   
+  addConsent: (consent) => set((state) => ({
+    patientConsents: [consent, ...state.patientConsents]
+  })),
+
   revokeConsent: (id) => set((state) => ({
     patientConsents: state.patientConsents.filter(c => c.id !== id)
   })),

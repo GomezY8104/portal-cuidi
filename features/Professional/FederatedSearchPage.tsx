@@ -6,9 +6,10 @@ import {
   Image as ImageIcon, FileText, FileSearch, 
   ChevronDown, ChevronLeft, ChevronRight, Eye, Plus, Clock, Database,
   ShieldCheck, Building2, Lock, Video, Mic,
-  CheckCircle, Trash2, X
+  CheckCircle, Trash2, X, Download
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { downloadPDF } from '../../utils/downloadUtils';
 
 /**
  * Página de Busca Técnica Federada.
@@ -73,6 +74,15 @@ export const FederatedSearchPage: React.FC = () => {
     } else {
       addAttachedDoc(doc);
     }
+  };
+
+  const handleDownload = (doc: any) => {
+    downloadPDF(
+        `Doc_Federado_${doc.id}.pdf`,
+        doc.name,
+        { Origem: doc.node, Data: doc.date, Especialidade: doc.spec },
+        "Conteúdo do documento federado baixado para conferência local."
+    );
   };
 
   const clearFilters = () => {
@@ -268,6 +278,9 @@ export const FederatedSearchPage: React.FC = () => {
                               </td>
                               <td className="px-8 py-6 text-right">
                                  <div className="flex justify-end gap-2">
+                                    <button onClick={() => handleDownload(doc)} className="p-3 bg-white text-slate-300 hover:text-slate-900 rounded-xl border border-slate-200 transition-all active:scale-95 shadow-sm hover:shadow-md" title="Baixar">
+                                       <Download size={20}/>
+                                    </button>
                                     <button onClick={() => openDrawer('ClinicalDetailDrawer', {...doc, detail: doc.name, hospital: doc.node, hasOriginal: true})} className="p-3 bg-white text-slate-300 hover:text-blue-600 rounded-xl border border-slate-200 transition-all active:scale-95 shadow-sm hover:shadow-md"><Eye size={20}/></button>
                                     <button 
                                       onClick={() => handleToggleDoc(doc)} 

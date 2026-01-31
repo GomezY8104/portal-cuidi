@@ -12,7 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 
 export const RegulationCaseDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openModal, openDrawer, attachedDocs, removeAttachedDoc, selectedVagas } = useAppStore();
+  const { openModal, openDrawer, attachedDocs, removeAttachedDoc, selectedVagas, addNotification } = useAppStore(); // Hook
   const { id } = useParams();
   
   const [priority, setPriority] = useState<'ALTA' | 'MÉDIA' | 'BAIXA' | null>(null);
@@ -28,7 +28,7 @@ export const RegulationCaseDetailPage: React.FC = () => {
   };
 
   const handleExecution = () => {
-    if (!eligibility) { alert('Selecione um veredito técnico (Passo 1).'); return; }
+    if (!eligibility) { addNotification({ type: 'warning', message: 'Selecione um veredito técnico (Passo 1).' }); return; }
     
     if (eligibility === 'INAPTO') {
       openModal('NotificationRecusalModal', { patient: patient.name, id });
@@ -41,9 +41,9 @@ export const RegulationCaseDetailPage: React.FC = () => {
     }
 
     // Se APTO
-    if (!priority) { alert('Defina a classificação de risco (Passo 2).'); return; }
-    if (!justification) { alert('A justificativa técnica é obrigatória (Passo 3).'); return; }
-    if (selectedVagas.length === 0) { alert('Selecione ao menos um prestador na Orquestração (Passo 5).'); return; }
+    if (!priority) { addNotification({ type: 'warning', message: 'Defina a classificação de risco (Passo 2).' }); return; }
+    if (!justification) { addNotification({ type: 'warning', message: 'A justificativa técnica é obrigatória (Passo 3).' }); return; }
+    if (selectedVagas.length === 0) { addNotification({ type: 'error', message: 'Selecione ao menos um prestador na Orquestração (Passo 5).' }); return; }
     
     openModal('EligibilityModal', { patient: patient.name, eligibility, priority, justification, vagas: selectedVagas });
   };

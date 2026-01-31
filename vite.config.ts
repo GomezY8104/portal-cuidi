@@ -1,28 +1,23 @@
 
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// fix: Define __dirname for ESM environment since it is not globally available
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
+// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-      },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
+  // Carga las variables de entorno basándose en el modo (development/production)
+  // El tercer argumento '' carga todas las variables, independientemente del prefijo, aunque Vercel/Vite usan VITE_ por defecto.
+  const env = loadEnv(mode, '.', '');
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 3000,
+      open: true
+    },
+    define: {
+      // Polyfill para process.env.API_KEY requerido por las guías de @google/genai
+      // Esto inyecta el valor de la variable VITE_GEMINI_API_KEY en el código compilado
+      'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY)
+    }
+  };
 });

@@ -8,7 +8,7 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 
 export const NodesManagementPage: React.FC = () => {
-  const { openModal } = useAppStore();
+  const { openModal, addNotification } = useAppStore(); // Use addNotification
   const [searchTerm, setSearchTerm] = useState('');
 
   const nodes = [
@@ -22,11 +22,18 @@ export const NodesManagementPage: React.FC = () => {
     if (action === 'DETAILS') {
       openModal('NodeDetailModal', node);
     } else if (action === 'SUSPEND') {
-      if(confirm(`Suspender nó ${node.name}? Esta ação revoga certificados.`)) {
-        alert('Nó suspenso.');
-      }
+      openModal('ConfirmationModal', {
+        title: 'Suspender Nó Federado',
+        message: `ATENÇÃO: Deseja suspender o nó ${node.name}? Esta ação revoga certificados e interrompe a interoperabilidade imediatamente.`,
+        type: 'danger',
+        onConfirm: () => {
+            // Lógica real de suspensão viria aqui
+            addNotification({ type: 'warning', message: `Nó ${node.name} suspenso. Certificados revogados.` });
+        }
+      });
     } else if (action === 'AUDIT') {
-      alert('Navegando para auditoria filtrada...');
+      addNotification({ type: 'info', message: 'Carregando trilha de auditoria filtrada...' });
+      // navigate('/system/audit?node=...')
     }
   };
 

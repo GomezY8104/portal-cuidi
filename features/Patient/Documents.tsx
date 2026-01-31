@@ -5,14 +5,13 @@ import {
   FileText, CheckCircle, Clock, 
   ChevronRight, UploadCloud, Trash2, 
   Download, History, AlertCircle, Info,
-  AlertTriangle, Timer, Globe
+  AlertTriangle, Timer, Globe, ArrowLeft
 } from 'lucide-react';
-import { MOCK_DOC_REQUESTS } from '../../mocks/seed';
-import { useAppStore } from '../../store/useAppStore';
+import { useAppStore } from '../../store/useAppStore'; // Store atualizado
 import { useNavigate } from 'react-router-dom';
 
 export const PatientDocumentsPage: React.FC = () => {
-  const { openDrawer } = useAppStore();
+  const { openDrawer, patientDocRequests } = useAppStore(); // Consome do Store agora
   const navigate = useNavigate();
 
   const getDaysLeft = (dateStr: string) => {
@@ -24,14 +23,25 @@ export const PatientDocumentsPage: React.FC = () => {
 
   return (
     <div className="space-y-10 animate-fade-in-up pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest mb-3">
-            <FolderOpen size={16} /> Gestão Documental Federada
+      
+      {/* HEADER ATUALIZADO COM VOLTAR */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pb-6">
+        <div className="flex items-start gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 mt-1 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-white transition-all shadow-sm active:scale-95"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-widest mb-3">
+              <FolderOpen size={16} /> Gestão Documental Federada
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Meus Documentos</h1>
+            <p className="text-slate-500 mt-2 text-lg max-w-2xl font-medium">Responda a solicitações de reguladores e organize seus arquivos de saúde para agilizar atendimentos.</p>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Meus Documentos</h1>
-          <p className="text-slate-500 mt-2 text-lg max-w-2xl font-medium">Responda a solicitações de reguladores e organize seus arquivos de saúde para agilizar atendimentos.</p>
         </div>
+        
         <div className="flex gap-3">
             <button 
               onClick={() => navigate('/patient/documents/search')}
@@ -54,7 +64,7 @@ export const PatientDocumentsPage: React.FC = () => {
             <h3 className="text-xl font-black text-slate-900">Resumo</h3>
             <div className="space-y-4">
               {[
-                { label: 'Solicitações Pendentes', value: MOCK_DOC_REQUESTS.length, color: 'amber' },
+                { label: 'Solicitações Pendentes', value: patientDocRequests.length, color: 'amber' },
                 { label: 'Arquivos Enviados', value: '12', color: 'blue' },
                 { label: 'Documentos Verificados', value: '08', color: 'emerald' },
               ].map((s, i) => (
@@ -76,7 +86,10 @@ export const PatientDocumentsPage: React.FC = () => {
         <div className="lg:col-span-3 space-y-10">
           {/* AÇÕES REQUERIDAS (TABLA PROFISSIONAL) */}
           <section className="space-y-6">
-            <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3"><AlertCircle className="text-amber-500" /> Ações Requeridas</h3>
+            <div className="flex items-center gap-3">
+               <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3"><AlertCircle className="text-amber-500" /> Ações Requeridas</h3>
+               <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold">{patientDocRequests.length}</span>
+            </div>
             
             <div className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm">
                <table className="w-full text-left border-collapse">
@@ -90,7 +103,10 @@ export const PatientDocumentsPage: React.FC = () => {
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                     {MOCK_DOC_REQUESTS.map(req => {
+                     {patientDocRequests.length === 0 && (
+                        <tr><td colSpan={5} className="p-8 text-center text-slate-400 font-bold text-xs uppercase">Nenhuma pendência documental.</td></tr>
+                     )}
+                     {patientDocRequests.map(req => {
                         const daysLeft = getDaysLeft(req.dueDate);
                         const urgencyLevel = req.priority === 'HIGH' ? 'ALTA' : 'MÉDIA';
                         const bannerColor = req.priority === 'HIGH' ? 'bg-red-500' : 'bg-amber-500';

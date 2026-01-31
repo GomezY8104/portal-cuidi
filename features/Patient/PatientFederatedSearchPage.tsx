@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Search, MapPin, Clock, Star, 
@@ -86,7 +87,7 @@ const PROVIDERS_DATA = [
 
 export const PatientFederatedSearchPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openModal } = useAppStore();
+  const { openModal, addNotification } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('ALL');
   const [sortOption, setSortOption] = useState('RELEVANCE'); // RELEVANCE, DISTANCE, SCORE, RATING
@@ -124,7 +125,7 @@ export const PatientFederatedSearchPage: React.FC = () => {
       setCompareList(compareList.filter(item => item !== id));
     } else {
       if (compareList.length >= 3) {
-        alert('Máximo de 3 prestadores para comparação.');
+        addNotification({ type: 'warning', message: 'Máximo de 3 prestadores para comparação.' });
         return;
       }
       setCompareList([...compareList, id]);
@@ -455,5 +456,3 @@ export const PatientFederatedSearchPage: React.FC = () => {
     </div>
   );
 };
-
-

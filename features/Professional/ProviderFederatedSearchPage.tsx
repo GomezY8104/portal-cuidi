@@ -6,9 +6,10 @@ import {
   Image as ImageIcon, FileText, FileSearch, 
   ChevronDown, Eye, Plus, Clock, Database,
   ShieldCheck, Building2, Lock, Video, Mic,
-  CheckCircle, Trash2
+  CheckCircle, Trash2, Download
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { downloadPDF } from '../../utils/downloadUtils';
 
 export const ProviderFederatedSearchPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,6 +51,15 @@ export const ProviderFederatedSearchPage: React.FC = () => {
     } else {
       addAttachedDoc(doc);
     }
+  };
+
+  const handleDownload = (doc: any) => {
+    downloadPDF(
+        `Doc_Federado_${doc.id}.pdf`,
+        doc.name,
+        { Origem: doc.node, Data: doc.date, Especialidade: doc.spec },
+        "Conteúdo do documento federado baixado para conferência local."
+    );
   };
 
   const handleFinish = () => {
@@ -233,10 +243,13 @@ export const ProviderFederatedSearchPage: React.FC = () => {
                               </td>
                               <td className="px-8 py-6 text-right">
                                  <div className="flex justify-end gap-2">
+                                    <button onClick={() => handleDownload(doc)} className="p-3 bg-white text-slate-300 hover:text-slate-900 rounded-xl border border-slate-200 transition-all active:scale-95 shadow-sm hover:shadow-md" title="Baixar">
+                                       <Download size={20}/>
+                                    </button>
                                     <button onClick={() => openDrawer('ClinicalDetailDrawer', {...doc, detail: doc.name, hospital: doc.node, hasOriginal: true})} className="p-3 bg-white text-slate-300 hover:text-blue-600 rounded-xl border border-slate-200 transition-all active:scale-95 shadow-sm hover:shadow-md"><Eye size={20}/></button>
                                     <button 
                                       onClick={() => handleToggleDoc(doc)} 
-                                      className={`p-3 text-white rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2 group/btn ${isAttached ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-900 hover:bg-emerald-600'}`}
+                                      className={`p-3 rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2 group/btn ${isAttached ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100' : 'bg-slate-900 text-white hover:bg-emerald-600'}`}
                                     >
                                        {isAttached ? <Trash2 size={20}/> : <Plus size={20} strokeWidth={3}/>}
                                        <span className="text-[9px] font-black uppercase tracking-widest hidden xl:inline">{isAttached ? 'Remover' : (isPatient ? 'Importar' : 'Anexar')}</span>

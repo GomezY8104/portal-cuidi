@@ -11,7 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 export const RegulationActionModals: React.FC = () => {
-  const { activeModal, closeModal, modalData } = useAppStore();
+  const { activeModal, closeModal, modalData, addNotification } = useAppStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -24,7 +24,7 @@ export const RegulationActionModals: React.FC = () => {
 
   const handleAction = () => {
     if (!notes && !isEligibility) { // Justificativa obrigatória para recusas/devoluções
-        alert('Por favor, descreva o motivo da ação.');
+        addNotification({ type: 'warning', message: 'Por favor, descreva o motivo da ação.' });
         return;
     }
 

@@ -17,9 +17,12 @@ export const PatientConsentsPage: React.FC = () => {
 
   const handleRevoke = (e: React.MouseEvent, id: string, name: string) => {
       e.stopPropagation();
-      if(window.confirm(`Tem certeza que deseja revogar o acesso de "${name}"? A instituição perderá o acesso aos dados imediatamente.`)) {
-          revokeConsent(id);
-      }
+      openModal('ConfirmationModal', {
+          title: 'Revogar Consentimento',
+          message: `Tem certeza que deseja revogar o acesso de "${name}"? A instituição perderá o acesso aos dados imediatamente.`,
+          type: 'danger',
+          onConfirm: () => revokeConsent(id)
+      });
   };
 
   const handleApprove = (e: React.MouseEvent, req: any) => {
@@ -29,9 +32,12 @@ export const PatientConsentsPage: React.FC = () => {
 
   const handleDeny = (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
-      if(window.confirm('Deseja negar esta solicitação de acesso?')) {
-          denyRequest(id);
-      }
+      openModal('ConfirmationModal', {
+          title: 'Negar Solicitação',
+          message: 'Deseja negar esta solicitação de acesso? A instituição será notificada.',
+          type: 'warning',
+          onConfirm: () => denyRequest(id)
+      });
   };
 
   return (

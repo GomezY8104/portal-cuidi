@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { 
   UploadCloud, X, FileText, CheckCircle, 
-  Loader2, AlertCircle, Trash2, ArrowRight,
-  ShieldCheck, Info, MapPin
+  Loader2, Trash2, ArrowRight,
+  ShieldCheck, MapPin
 } from 'lucide-react';
 
 export const UploadDocumentDrawer: React.FC = () => {
-  const { drawerData, closeDrawer } = useAppStore();
+  const { drawerData, closeDrawer, resolveDocRequest, addNotification } = useAppStore();
   const [file, setFile] = useState<File | null>(null);
   const [targetNode, setTargetNode] = useState('CENTRAL');
   const [uploading, setUploading] = useState(false);
@@ -23,15 +23,21 @@ export const UploadDocumentDrawer: React.FC = () => {
 
   const handleUpload = () => {
     setUploading(true);
+    
     // Simulação de upload seguro para o nó
     setTimeout(() => {
+      // Se tiver um requestId, resolve a pendência no store
+      if (drawerData?.requestId) {
+          resolveDocRequest(drawerData.requestId);
+      }
+      
       setUploading(false);
       setSuccess(true);
+      addNotification({ type: 'success', message: 'Documento enviado e pendência resolvida.' });
     }, 2000);
   };
 
   const handleFinish = () => {
-    alert('Documento enviado com sucesso para a rede federada!');
     closeDrawer();
   };
 

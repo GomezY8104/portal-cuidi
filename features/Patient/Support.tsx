@@ -4,7 +4,7 @@ import { MessageSquare, ChevronRight, HelpCircle } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const PatientSupportPage: React.FC = () => {
-  const { openModal } = useAppStore();
+  const { openModal, addNotification } = useAppStore();
 
   const faqs = [
     { q: 'Como revogar um consentimento?', cat: 'Privacidade' },
@@ -14,12 +14,17 @@ export const PatientSupportPage: React.FC = () => {
   ];
 
   const handleContact = () => {
-      openModal('JustificationModal', { text: '', onSave: (msg: string) => alert('Mensagem enviada: ' + msg) }); 
+      openModal('JustificationModal', { text: '', onSave: (msg: string) => addNotification({ type: 'success', message: 'Mensagem enviada para o suporte. Protocolo #2891.' }) }); 
       // Using JustificationModal as a generic text input modal for demo
   };
 
   const handleViewFaq = (faq: any) => {
-      alert(`Resposta para: "${faq.q}"\n\n(Conteúdo do artigo de ajuda...)`);
+      openModal('ConfirmationModal', {
+          title: faq.q,
+          message: 'O conteúdo detalhado deste artigo de ajuda seria exibido aqui.',
+          type: 'info',
+          onConfirm: () => {} // No-op, just viewing
+      });
   };
 
   return (

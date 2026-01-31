@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export const ConsentModals: React.FC = () => {
-  const { closeModal, modalData, activeModal } = useAppStore();
+  const { closeModal, modalData, activeModal, addConsent } = useAppStore(); // IMPORTAR addConsent
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -48,6 +48,29 @@ export const ConsentModals: React.FC = () => {
     setLoading(true);
     // Simula latência de gravação no Ledger/Blockchain
     setTimeout(() => {
+      // LOGICA DE ADIÇÃO AO STORE
+      if (!isRevoke && !isEdit && selectedNode) {
+          const enabledTypes = Object.entries(permissions)
+            .filter(([key, enabled]) => enabled)
+            .map(([key]) => key.toUpperCase())
+            .join(', ');
+
+          const newConsent = {
+              id: `C-${Date.now()}`,
+              inst: selectedNode.name,
+              segment: selectedNode.type || 'HOSPITAL',
+              types: enabledTypes || 'DADOS BÁSICOS',
+              purpose: config.purpose === 'TREATMENT' ? 'TRATAMENTO' : 
+                       config.purpose === 'RESEARCH' ? 'PESQUISA' : 
+                       config.purpose === 'INSURANCE' ? 'AUDITORIA' : 'SEGUNDA OPINIÃO',
+              validity: config.validity === 'PERMANENT' ? 'PERMANENTE' : 
+                        config.validity === '30D' ? '30 DIAS' : 
+                        config.validity === '1Y' ? '1 ANO' : '24 HORAS'
+          };
+          
+          addConsent(newConsent);
+      }
+
       setLoading(false);
       setStep(3);
     }, 1800);

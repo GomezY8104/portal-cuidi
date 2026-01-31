@@ -11,7 +11,7 @@ import {
 import { downloadPDF } from '../../utils/downloadUtils';
 
 export const ClinicalDetailDrawer: React.FC = () => {
-  const { drawerData, closeDrawer } = useAppStore();
+  const { drawerData, closeDrawer, openModal, addNotification } = useAppStore(); // hooks
   const [downloading, setDownloading] = useState(false);
 
   if (!drawerData) return null;
@@ -30,7 +30,23 @@ export const ClinicalDetailDrawer: React.FC = () => {
           'Este é um documento original assinado digitalmente.\nA integridade foi verificada no Ledger Nacional.\n\nConteúdo:\nExame realizado com sucesso. Parâmetros normais.'
       );
       setDownloading(false);
+      addNotification({ type: 'success', message: 'Documento original baixado e verificado.' });
     }, 1500);
+  };
+
+  const handleDelete = () => {
+    openModal('ConfirmationModal', {
+        title: 'Excluir Documento',
+        message: 'Deseja realmente remover este documento do protocolo? Esta ação será registrada no log de auditoria.',
+        type: 'danger',
+        onConfirm: () => {
+            if (drawerData.onDelete) {
+                drawerData.onDelete();
+            }
+            closeDrawer();
+            addNotification({ type: 'info', message: 'Documento removido.' });
+        }
+    });
   };
 
   return (
@@ -109,12 +125,7 @@ export const ClinicalDetailDrawer: React.FC = () => {
       <div className="mt-auto pt-10 flex flex-col gap-4">
         {drawerData.onDelete && (
           <button 
-            onClick={() => {
-              if (window.confirm('Deseja realmente remover este documento do protocolo?')) {
-                drawerData.onDelete();
-                closeDrawer();
-              }
-            }}
+            onClick={handleDelete}
             className="w-full py-5 bg-red-50 text-red-600 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2 border border-red-100 shadow-inner shadow-red-200/20"
           >
             <Trash2 size={18}/> Excluir este Documento
