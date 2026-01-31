@@ -1,130 +1,135 @@
 
 import React, { useState, useMemo } from 'react';
-import { FileText, Download, Eye, Calendar, Building2, Search, Filter, Globe, Activity, FileDown } from 'lucide-react';
+import { FileText, Download, Eye, Filter, Share2, Globe, Building2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { useNavigate } from 'react-router-dom';
 
 export const ExamResultsPage: React.FC = () => {
-  const openModal = useAppStore(s => s.openModal);
+  const { openModal } = useAppStore();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNode, setSelectedNode] = useState('ALL');
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterNode, setFilterNode] = useState('ALL'); // NUEVO FILTRO DE NODO
 
   const exams = [
-    { id: 'EX-991', title: 'Raio-X de Tórax', lab: 'Hospital Central', date: '12 Out 2024', status: 'Disponível', type: 'IMAGEM', hasOriginal: true },
-    { id: 'EX-992', title: 'Hemograma Completo', lab: 'Lab Exames S/A', date: '10 Out 2024', status: 'Disponível', type: 'LAB', hasOriginal: true },
-    { id: 'EX-993', title: 'Ecocardiograma', lab: 'Cardio Centro', date: '05 Out 2024', status: 'Processando', type: 'IMAGEM', hasOriginal: false },
-    { id: 'EX-994', title: 'Glicemia de Jejum', lab: 'Hospital das Clínicas', date: '02 Out 2024', status: 'Disponível', type: 'LAB', hasOriginal: true },
+    { id: 'EX-991', title: 'Raio-X de Tórax', lab: 'Hospital Central', date: '12/10/2024', status: 'Disponível', type: 'IMAGEM' },
+    { id: 'EX-992', title: 'Hemograma Completo', lab: 'Lab Exames S/A', date: '10/10/2024', status: 'Disponível', type: 'LAB' },
+    { id: 'EX-993', title: 'Ecocardiograma', lab: 'Cardio Centro', date: '05/10/2024', status: 'Processando', type: 'IMAGEM' },
   ];
 
-  const filteredExams = useMemo(() => {
-    return exams.filter(exam => {
-      const matchSearch = exam.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchNode = selectedNode === 'ALL' || exam.lab === selectedNode;
-      return matchSearch && matchNode;
+  const filtered = useMemo(() => {
+    return exams.filter(e => {
+        const matchSearch = e.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchType = filterType === 'ALL' || e.type === filterType;
+        const matchNode = filterNode === 'ALL' || e.lab === filterNode; // FILTRADO POR NODO
+        return matchSearch && matchType && matchNode;
     });
-  }, [searchTerm, selectedNode]);
+  }, [searchTerm, filterType, filterNode]);
 
-  const recentExams = exams.slice(0, 3);
+  const handleShare = (exam: any) => {
+      openModal('NewConsentModal', { specificExam: exam.id }); // Reusing consent modal logic
+  };
 
   return (
-    <div className="space-y-10 animate-fade-in-up">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-2">
-            <Activity size={14} /> Meus Laudos Digitais
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Resultados de Exames</h1>
-          <p className="text-slate-500 mt-1 text-lg font-medium">Acesse resultados laboratoriais e de imagem de toda a rede federada.</p>
-        </div>
+    <div className="space-y-6 animate-fade-in-up pb-20 font-sans">
+      <div className="border-b border-slate-200 pb-6 flex justify-between items-end">
+         <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Exames</h1>
+            <p className="text-slate-500 text-xs font-medium mt-1">Acesso aos seus laudos e imagens federadas.</p>
+         </div>
+         {/* BOTÓN DE BUSCA TÉCNICA FEDERADA -> Meus Documentos */}
+         <button 
+             onClick={() => navigate('/patient/documents')}
+             className="px-5 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-bold text-xs uppercase tracking-wide shadow-lg transition-all flex items-center gap-2 active:scale-95"
+           >
+             <Globe size={14}/> 
+             Meus Documentos
+        </button>
       </div>
 
-      {/* Lançamentos Recentes */}
-      <section className="space-y-4">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-2">Lançamentos Recentes na Rede</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {recentExams.map((exam) => (
-            <div key={exam.id} className="bg-white p-6 rounded-[2rem] border-2 border-emerald-50 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
-               <div className="absolute top-2 right-2 p-1.5 bg-emerald-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                 <CheckCircle2 size={12}/>
-               </div>
-               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
-                  <FileText size={24}/>
-               </div>
-               <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{exam.date}</p>
-               <h4 className="font-bold text-slate-900 text-sm leading-tight">{exam.title}</h4>
-               <p className="text-[9px] text-slate-500 font-bold uppercase mt-2 tracking-widest">{exam.lab}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Busca e Filtros */}
-      <div className="bg-white p-4 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex-1 w-full relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input 
+      <div className="flex gap-4 items-center bg-white p-4 border border-slate-200 rounded-lg shadow-sm">
+         <input 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            type="text" 
-            placeholder="Pesquisar por nome do exame ou tipo..." 
-            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-sm focus:border-emerald-200 transition-all" 
-          />
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:flex-none">
-            <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <select 
-              value={selectedNode}
-              onChange={e => setSelectedNode(e.target.value)}
-              className="w-full pl-12 pr-8 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-xs uppercase tracking-widest appearance-none min-w-[200px]"
-            >
-              <option value="ALL">Todos os Nós Federados</option>
-              <option value="Hospital Central">Hospital Central</option>
-              <option value="Lab Exames S/A">Lab Exames S/A</option>
-              <option value="Cardio Centro">Cardio Centro</option>
-              <option value="Hospital das Clínicas">Hosp. Clínicas</option>
-            </select>
-          </div>
-        </div>
+            placeholder="Filtrar exames..." 
+            className="flex-1 p-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-500"
+         />
+         {/* FILTRO DE NODO / INSTITUIÇÃO */}
+         <select 
+            value={filterNode}
+            onChange={e => setFilterNode(e.target.value)}
+            className="p-2 border border-slate-300 rounded text-xs font-bold text-slate-600 outline-none"
+         >
+            <option value="ALL">Todas as Instituições</option>
+            {Array.from(new Set(exams.map(e => e.lab))).map(lab => <option key={lab} value={lab}>{lab}</option>)}
+         </select>
+         <select 
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
+            className="p-2 border border-slate-300 rounded text-xs font-bold text-slate-600 outline-none"
+         >
+            <option value="ALL">Todos os Tipos</option>
+            <option value="LAB">Laboratorial</option>
+            <option value="IMAGEM">Imagem</option>
+         </select>
+         <select className="p-2 border border-slate-300 rounded text-xs font-bold text-slate-600 outline-none">
+            <option value="ALL">Qualquer Data</option>
+            <option value="30D">30 Dias</option>
+         </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredExams.map((exam, i) => (
-          <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-prominent transition-all group animate-in zoom-in duration-300">
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                <FileText size={24} />
-              </div>
-              <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${exam.status === 'Disponível' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                {exam.status}
-              </span>
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2 leading-tight">{exam.title}</h3>
-            <div className="space-y-3 mb-8">
-              <p className="text-xs font-medium text-slate-500 flex items-center gap-2"><Building2 size={14}/> {exam.lab}</p>
-              <p className="text-xs font-medium text-slate-500 flex items-center gap-2"><Calendar size={14}/> {exam.date}</p>
-              {exam.hasOriginal && (
-                <p className="text-[9px] font-black text-emerald-600 flex items-center gap-1.5 uppercase tracking-tighter"><FileDown size={14}/> PDF Original disponível</p>
-              )}
-            </div>
-            
-            <div className="flex items-center justify-between pt-6 border-t border-slate-50">
-               <button 
-                  disabled={exam.status !== 'Disponível'}
-                  onClick={() => openModal('ExamViewModal', exam)}
-                  className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${exam.status === 'Disponível' ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}
-                >
-                  <Eye size={18}/> Ver Laudo Digital
-                </button>
-            </div>
-          </div>
-        ))}
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+         <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+               <tr>
+                  <th className="px-6 py-3">Nome do Exame</th>
+                  <th className="px-6 py-3">Tipo</th>
+                  <th className="px-6 py-3">Data</th>
+                  <th className="px-6 py-3">Origem</th>
+                  <th className="px-6 py-3 text-center">Status</th>
+                  <th className="px-6 py-3 text-right">Ação</th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+               {filtered.map(exam => (
+                  <tr key={exam.id} className="hover:bg-slate-50 transition-colors">
+                     <td className="px-6 py-3 font-bold text-slate-900">{exam.title}</td>
+                     <td className="px-6 py-3 uppercase text-[10px]">{exam.type}</td>
+                     <td className="px-6 py-3 font-mono text-slate-500">{exam.date}</td>
+                     <td className="px-6 py-3 uppercase text-[10px] flex items-center gap-1.5"><Building2 size={10} className="text-slate-400"/> {exam.lab}</td>
+                     <td className="px-6 py-3 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${exam.status === 'Disponível' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                           {exam.status}
+                        </span>
+                     </td>
+                     <td className="px-6 py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                           <button 
+                              onClick={() => openModal('ExamViewModal', exam)}
+                              disabled={exam.status !== 'Disponível'}
+                              className="text-slate-500 hover:text-blue-600 disabled:opacity-50" title="Ver Laudo"
+                           >
+                              <Eye size={16}/>
+                           </button>
+                           <button 
+                              className="text-slate-500 hover:text-slate-900 disabled:opacity-50" title="Baixar PDF"
+                              disabled={exam.status !== 'Disponível'}
+                           >
+                              <Download size={16}/>
+                           </button>
+                           <button 
+                              onClick={() => handleShare(exam)}
+                              className="text-slate-500 hover:text-indigo-600" title="Compartilhar"
+                           >
+                              <Share2 size={16}/>
+                           </button>
+                        </div>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </table>
       </div>
     </div>
   );
 };
-
-const CheckCircle2 = ({ size, className }: { size?: number, className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);

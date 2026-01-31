@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import { AppLayout } from './components/Layout';
+import { ToastContainer } from './components/ui/ToastContainer';
 import { LandingPage } from './features/Landing/Landing';
 import { LoginPage } from './features/Auth/Login';
 import { ForgotPage } from './features/Auth/Forgot';
@@ -15,7 +16,7 @@ import { LocalPoliciesPage } from './features/Federation/LocalPolicies';
 import { InvitesManagementPage } from './features/NodeAdmin/InvitesManagement';
 import { GlobalDashboardPage } from './features/SystemAdmin/Dashboard';
 import { GlobalAnalyticsPage } from './features/SystemAdmin/Analytics';
-// import { CodeAuditPage } from './features/SystemAdmin/CodeAudit'; // Página não existe
+import { CodeAuditPage } from './features/SystemAdmin/CodeAudit';
 import { NodeDashboardPage } from './features/NodeAdmin/Dashboard';
 import { PatientDashboardPage } from './features/Patient/Dashboard';
 import { PatientConsentsPage } from './features/Patient/Consents';
@@ -38,6 +39,7 @@ import { HelpCenterPage } from './features/Shared/HelpCenter';
 import { UserProfilePage } from './features/Shared/UserProfile';
 import { NotificationsCenterPage } from './features/Shared/NotificationsCenter';
 import { FederationReportsPage } from './features/Shared/FederationReports';
+import { HowItWorksPage } from './features/Shared/HowItWorks';
 
 import { LedgerDetailPage } from './features/Shared/LedgerDetail';
 import { TerritoryManagementPage } from './features/SystemAdmin/TerritoryManagement';
@@ -52,6 +54,7 @@ import { ChangelogPage } from './features/Shared/Changelog';
 import { PatientDocumentsPage } from './features/Patient/Documents';
 import { RegulationCasesPage } from './features/Patient/RegulationCases';
 import { PatientFederatedSearchPage } from './features/Patient/PatientFederatedSearchPage';
+import { PatientSupportPage } from './features/Patient/Support'; // Nova Página
 
 // UPA Imports
 import { UpaWorkTrayPage } from './features/Professional/UpaWorkTray';
@@ -97,10 +100,16 @@ import { SystemAdminModals } from './components/Modals/SystemAdminModals';
 import { PatientScheduleModal } from './components/Modals/PatientScheduleModal';
 import { NewProcedureModal } from './components/Modals/NewProcedureModal'; 
 import { EmergencyRequestModal } from './components/Modals/EmergencyRequestModal'; 
+import { ConfirmationModal, InputModal } from './components/Modals/GenericModals'; // Novos Modais
 import { Shield, X } from 'lucide-react';
 
 const App: React.FC = () => {
   const { isAuthenticated, activeDrawer, closeDrawer, activeModal, closeModal } = useAppStore();
+
+  // Helper to wrap private routes
+  const PrivateRoute = (children: React.ReactNode) => {
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+  };
 
   const renderModalContent = () => {
     switch (activeModal) {
@@ -143,6 +152,10 @@ const App: React.FC = () => {
       case 'CreateTerritoryModal':
       case 'GlobalDirectiveModal':
       case 'GenerateReportModal':
+      case 'NodeDetailModal':
+      case 'TerritoryDetailModal':
+      case 'AuditTraceModal':
+      case 'PolicyEditorModal':
         return <SystemAdminModals />;
       case 'PatientScheduleModal':
         return <PatientScheduleModal />;
@@ -150,6 +163,10 @@ const App: React.FC = () => {
         return <NewProcedureModal />;
       case 'EmergencyRequestModal': 
         return <EmergencyRequestModal />;
+      case 'ConfirmationModal': // Novo
+        return <ConfirmationModal />;
+      case 'InputModal': // Novo
+        return <InputModal />;
       default:
         return <div className="p-8 text-sm font-bold">Funcionalidade {activeModal} em desenvolvimento.</div>;
     }
@@ -157,6 +174,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
+      <ToastContainer /> 
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard-redirect" replace /> : <LoginPage />} />
@@ -165,6 +183,8 @@ const App: React.FC = () => {
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/help" element={<HelpCenterPage />} />
         <Route path="/api-docs" element={<ApiDocsPage />} />
         <Route path="/network-status" element={<NetworkStatusPage />} />
         <Route path="/terms" element={<LegalPage type="terms" />} />
@@ -184,67 +204,69 @@ const App: React.FC = () => {
           ) : <Navigate to="/login" replace />
         } />
 
-        <Route path="/system" element={<AppLayout><GlobalDashboardPage /></AppLayout>} />
-        <Route path="/system/nodes" element={<AppLayout><NodesManagementPage /></AppLayout>} />
-        <Route path="/system/catalogs" element={<AppLayout><CatalogsPage /></AppLayout>} />
-        <Route path="/system/audit" element={<AppLayout><GlobalAuditPage /></AppLayout>} />
-        {/* <Route path="/system/code-audit" element={<AppLayout><CodeAuditPage /></AppLayout>} /> */}
-        <Route path="/system/territories" element={<AppLayout><TerritoryManagementPage /></AppLayout>} />
-        <Route path="/system/compliance" element={<AppLayout><ComplianceDashboardPage /></AppLayout>} />
-        <Route path="/analytics" element={<AppLayout><GlobalAnalyticsPage /></AppLayout>} />
-        <Route path="/reports" element={<AppLayout><FederationReportsPage /></AppLayout>} />
+        <Route path="/system" element={PrivateRoute(<AppLayout><GlobalDashboardPage /></AppLayout>)} />
+        <Route path="/system/nodes" element={PrivateRoute(<AppLayout><NodesManagementPage /></AppLayout>)} />
+        <Route path="/system/catalogs" element={PrivateRoute(<AppLayout><CatalogsPage /></AppLayout>)} />
+        <Route path="/system/audit" element={PrivateRoute(<AppLayout><GlobalAuditPage /></AppLayout>)} />
+        <Route path="/system/code-audit" element={PrivateRoute(<AppLayout><CodeAuditPage /></AppLayout>)} />
+        <Route path="/system/territories" element={PrivateRoute(<AppLayout><TerritoryManagementPage /></AppLayout>)} />
+        <Route path="/system/compliance" element={PrivateRoute(<AppLayout><ComplianceDashboardPage /></AppLayout>)} />
+        <Route path="/analytics" element={PrivateRoute(<AppLayout><GlobalAnalyticsPage /></AppLayout>)} />
+        <Route path="/reports" element={PrivateRoute(<AppLayout><FederationReportsPage /></AppLayout>)} />
 
-        <Route path="/node-admin" element={<AppLayout><NodeDashboardPage /></AppLayout>} />
-        <Route path="/node-admin/users" element={<AppLayout><UserManagementPage /></AppLayout>} />
-        <Route path="/node-admin/invites" element={<AppLayout><InvitesManagementPage /></AppLayout>} />
-        <Route path="/node-admin/config" element={<AppLayout><TechnicalConfigPage /></AppLayout>} />
-        <Route path="/node-admin/devices" element={<AppLayout><DeviceManagementPage /></AppLayout>} />
-        <Route path="/node-admin/audit-reports" element={<AppLayout><AuditReportsPage /></AppLayout>} />
+        <Route path="/node-admin" element={PrivateRoute(<AppLayout><NodeDashboardPage /></AppLayout>)} />
+        <Route path="/node-admin/users" element={PrivateRoute(<AppLayout><UserManagementPage /></AppLayout>)} />
+        <Route path="/node-admin/invites" element={PrivateRoute(<AppLayout><InvitesManagementPage /></AppLayout>)} />
+        <Route path="/node-admin/config" element={PrivateRoute(<AppLayout><TechnicalConfigPage /></AppLayout>)} />
+        <Route path="/node-admin/devices" element={PrivateRoute(<AppLayout><DeviceManagementPage /></AppLayout>)} />
+        <Route path="/node-admin/audit-reports" element={PrivateRoute(<AppLayout><AuditReportsPage /></AppLayout>)} />
         
-        <Route path="/federation/policies" element={<AppLayout><LocalPoliciesPage /></AppLayout>} />
-        <Route path="/ledger/:id" element={<AppLayout><LedgerDetailPage /></AppLayout>} />
+        <Route path="/federation/policies" element={PrivateRoute(<AppLayout><LocalPoliciesPage /></AppLayout>)} />
+        <Route path="/ledger/:id" element={PrivateRoute(<AppLayout><LedgerDetailPage /></AppLayout>)} />
         
-        <Route path="/patient" element={<AppLayout><PatientDashboardPage /></AppLayout>} />
-        <Route path="/patient/history" element={<AppLayout><ClinicalHistoryPage /></AppLayout>} />
-        <Route path="/patient/exams" element={<AppLayout><ExamResultsPage /></AppLayout>} />
-        <Route path="/patient/prescriptions" element={<AppLayout><PrescriptionsPage /></AppLayout>} />
-        <Route path="/patient/consents" element={<AppLayout><PatientConsentsPage /></AppLayout>} />
-        <Route path="/patient/access-log" element={<AppLayout><PatientAccessLogPage /></AppLayout>} />
-        <Route path="/patient/emergency" element={<AppLayout><EmergencyProfilePage /></AppLayout>} />
-        <Route path="/patient/documents" element={<AppLayout><PatientDocumentsPage /></AppLayout>} />
-        <Route path="/patient/cases" element={<AppLayout><RegulationCasesPage /></AppLayout>} />
-        <Route path="/patient/search" element={<AppLayout><PatientFederatedSearchPage /></AppLayout>} />
+        <Route path="/patient" element={PrivateRoute(<AppLayout><PatientDashboardPage /></AppLayout>)} />
+        <Route path="/patient/history" element={PrivateRoute(<AppLayout><ClinicalHistoryPage /></AppLayout>)} />
+        <Route path="/patient/exams" element={PrivateRoute(<AppLayout><ExamResultsPage /></AppLayout>)} />
+        <Route path="/patient/prescriptions" element={PrivateRoute(<AppLayout><PrescriptionsPage /></AppLayout>)} />
+        <Route path="/patient/consents" element={PrivateRoute(<AppLayout><PatientConsentsPage /></AppLayout>)} />
+        <Route path="/patient/access-log" element={PrivateRoute(<AppLayout><PatientAccessLogPage /></AppLayout>)} />
+        <Route path="/patient/emergency" element={PrivateRoute(<AppLayout><EmergencyProfilePage /></AppLayout>)} />
+        <Route path="/patient/documents" element={PrivateRoute(<AppLayout><PatientDocumentsPage /></AppLayout>)} />
+        <Route path="/patient/documents/search" element={PrivateRoute(<AppLayout><ProviderFederatedSearchPage /></AppLayout>)} />
+        <Route path="/patient/cases" element={PrivateRoute(<AppLayout><RegulationCasesPage /></AppLayout>)} />
+        <Route path="/patient/providers" element={PrivateRoute(<AppLayout><PatientFederatedSearchPage /></AppLayout>)} />
+        <Route path="/patient/support" element={PrivateRoute(<AppLayout><PatientSupportPage /></AppLayout>)} />
         
-        <Route path="/aps" element={<AppLayout><WorkTrayPage /></AppLayout>} />
-        <Route path="/aps/new-case" element={<AppLayout><NewCasePage /></AppLayout>} />
-        <Route path="/aps/case/:id" element={<AppLayout><CaseDetailPage /></AppLayout>} />
-        <Route path="/aps/case/:id/search" element={<AppLayout><ProviderFederatedSearchPage /></AppLayout>} />
-        <Route path="/aps/dashboard" element={<AppLayout><ApsManagerDashboard /></AppLayout>} />
+        <Route path="/aps" element={PrivateRoute(<AppLayout><WorkTrayPage /></AppLayout>)} />
+        <Route path="/aps/new-case" element={PrivateRoute(<AppLayout><NewCasePage /></AppLayout>)} />
+        <Route path="/aps/case/:id" element={PrivateRoute(<AppLayout><CaseDetailPage /></AppLayout>)} />
+        <Route path="/aps/case/:id/search" element={PrivateRoute(<AppLayout><ProviderFederatedSearchPage /></AppLayout>)} />
+        <Route path="/aps/dashboard" element={PrivateRoute(<AppLayout><ApsManagerDashboard /></AppLayout>)} />
         
-        <Route path="/upa" element={<AppLayout><UpaWorkTrayPage /></AppLayout>} />
-        <Route path="/upa/new-case" element={<AppLayout><NewUpaCasePage /></AppLayout>} />
-        <Route path="/upa/case/:id" element={<AppLayout><UpaCaseDetailPage /></AppLayout>} />
-        <Route path="/upa/case/:id/search" element={<AppLayout><ProviderFederatedSearchPage /></AppLayout>} />
+        <Route path="/upa" element={PrivateRoute(<AppLayout><UpaWorkTrayPage /></AppLayout>)} />
+        <Route path="/upa/new-case" element={PrivateRoute(<AppLayout><NewUpaCasePage /></AppLayout>)} />
+        <Route path="/upa/case/:id" element={PrivateRoute(<AppLayout><UpaCaseDetailPage /></AppLayout>)} />
+        <Route path="/upa/case/:id/search" element={PrivateRoute(<AppLayout><ProviderFederatedSearchPage /></AppLayout>)} />
 
-        <Route path="/provider" element={<AppLayout><ProviderWorkTrayPage /></AppLayout>} />
-        <Route path="/provider/regulation-flow/:id" element={<AppLayout><ProviderRegulationFlowPage /></AppLayout>} />
-        <Route path="/provider/case/:id" element={<AppLayout><ProviderCaseDetailPage /></AppLayout>} />
-        <Route path="/provider/case/:id/attendance" element={<AppLayout><ProviderAttendancePage /></AppLayout>} />
-        <Route path="/provider/case/:id/feedback" element={<AppLayout><ProviderFeedbackPage /></AppLayout>} />
-        <Route path="/provider/case/:id/search" element={<AppLayout><ProviderFederatedSearchPage /></AppLayout>} />
+        <Route path="/provider" element={PrivateRoute(<AppLayout><ProviderWorkTrayPage /></AppLayout>)} />
+        <Route path="/provider/regulation-flow/:id" element={PrivateRoute(<AppLayout><ProviderRegulationFlowPage /></AppLayout>)} />
+        <Route path="/provider/case/:id" element={PrivateRoute(<AppLayout><ProviderCaseDetailPage /></AppLayout>)} />
+        <Route path="/provider/case/:id/attendance" element={PrivateRoute(<AppLayout><ProviderAttendancePage /></AppLayout>)} />
+        <Route path="/provider/case/:id/feedback" element={PrivateRoute(<AppLayout><ProviderFeedbackPage /></AppLayout>)} />
+        <Route path="/provider/case/:id/search" element={PrivateRoute(<AppLayout><ProviderFederatedSearchPage /></AppLayout>)} />
         
-        <Route path="/regulator" element={<AppLayout><RegulationQueuePage /></AppLayout>} />
-        <Route path="/regulator/case/:id" element={<AppLayout><RegulationCaseDetailPage /></AppLayout>} />
-        <Route path="/regulator/case/:id/search" element={<AppLayout><FederatedSearchPage /></AppLayout> } />
-        <Route path="/regulator/case/:id/orchestrate" element={<AppLayout><OrchestrationPage /></AppLayout> } />
+        <Route path="/regulator" element={PrivateRoute(<AppLayout><RegulationQueuePage /></AppLayout>)} />
+        <Route path="/regulator/case/:id" element={PrivateRoute(<AppLayout><RegulationCaseDetailPage /></AppLayout>)} />
+        <Route path="/regulator/case/:id/search" element={PrivateRoute(<AppLayout><FederatedSearchPage /></AppLayout> )} />
+        <Route path="/regulator/case/:id/orchestrate" element={PrivateRoute(<AppLayout><OrchestrationPage /></AppLayout> )} />
         
-        <Route path="/telemedicine" element={<AppLayout><TelemedicinePage /></AppLayout>} />
-        <Route path="/restricted-request" element={<AppLayout><RestrictedAccessRequestPage /></AppLayout>} />
+        <Route path="/telemedicine" element={PrivateRoute(<AppLayout><TelemedicinePage /></AppLayout>)} />
+        <Route path="/restricted-request" element={PrivateRoute(<AppLayout><RestrictedAccessRequestPage /></AppLayout>)} />
         
-        <Route path="/profile" element={<AppLayout><UserProfilePage /></AppLayout>} />
-        <Route path="/notifications" element={<AppLayout><NotificationsCenterPage /></AppLayout>} />
-        <Route path="/security" element={<AppLayout><SecurityCenterPage /></AppLayout>} />
-        <Route path="/help" element={<AppLayout><HelpCenterPage /></AppLayout>} />
+        <Route path="/profile" element={PrivateRoute(<AppLayout><UserProfilePage /></AppLayout>)} />
+        <Route path="/notifications" element={PrivateRoute(<AppLayout><NotificationsCenterPage /></AppLayout>)} />
+        <Route path="/security" element={PrivateRoute(<AppLayout><SecurityCenterPage /></AppLayout>)} />
+        {/* (Removed duplicate /help route inside AppLayout) */}
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -275,7 +297,9 @@ const App: React.FC = () => {
       {activeModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
            <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onClick={closeModal}></div>
-           <div className={`relative bg-white w-full rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300 max-w-xl ${activeModal === 'NewProcedureModal' ? 'max-w-2xl' : ''}`}>
+           <div className={`relative w-full overflow-hidden animate-in zoom-in duration-300 ${
+             ['NewProcedureModal', 'AuditTraceModal', 'NodeDetailModal', 'TerritoryDetailModal', 'PolicyEditorModal'].includes(activeModal) ? 'max-w-4xl' : 'max-w-xl'
+           }`}>
               {renderModalContent()}
            </div>
         </div>

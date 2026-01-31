@@ -4,8 +4,24 @@ import {
   BarChart2, PieChart, TrendingUp, Clock, 
   Map, Download, Filter, Calendar, Info 
 } from 'lucide-react';
+import { downloadPDF } from '../../utils/downloadUtils';
 
 export const GlobalAnalyticsPage: React.FC = () => {
+  
+  const handleDownloadReport = () => {
+    downloadPDF(
+        'Relatorio_Analytics_Out2024.pdf',
+        'ANALYTICS FEDERADO - OUTUBRO 2024',
+        {
+            Periodo: '01/10/2024 - 31/10/2024',
+            Nós_Ativos: '1,248',
+            Volume_Solicitacoes: '42,109',
+            Status: 'FINALIZADO'
+        },
+        'O desempenho da rede federada apresenta crescimento de 5.4% no volume de solicitações.\nO tempo médio de regulação caiu 15%, atingindo 4h 12m.\nA especialidade de Cardiologia lidera a demanda com 85k solicitações.\n\nEste relatório foi gerado automaticamente pelo sistema de BI do Portal CUIDI.'
+    );
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -20,7 +36,10 @@ export const GlobalAnalyticsPage: React.FC = () => {
            <button className="px-5 py-3 bg-white border border-slate-200 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-50">
              <Calendar size={18} /> Outubro 2024
            </button>
-           <button className="px-5 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 shadow-xl shadow-slate-200">
+           <button 
+             onClick={handleDownloadReport}
+             className="px-5 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 shadow-xl shadow-slate-200 active:scale-95 transition-all"
+           >
              <Download size={18} /> Relatório PDF
            </button>
         </div>

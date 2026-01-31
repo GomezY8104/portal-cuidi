@@ -1,15 +1,15 @@
+
 import React, { useState } from 'react';
 import { 
-  Shield, Database, Search, Filter, Calendar,
-  FileText, CheckCircle2, AlertCircle, Eye, X
+  Shield, Database, Search, Filter,
+  Eye
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const GlobalAuditPage: React.FC = () => {
-  const { openDrawer } = useAppStore();
+  const { openModal } = useAppStore();
   const [filter, setFilter] = useState({ node: '', role: '', outcome: '' });
 
-  // MOCK DATA
   const events = [
     { id: 'EV-001', timestamp: '2024-10-26 14:30', node: 'SP-HOSP-CENTRAL', actor: 'Dr. Ricardo', role: 'NODE_ADMIN', patient: 'P-921', action: 'READ_CLINICAL', result: 'APPROVED', policy: 'POL-FED-01' },
     { id: 'EV-002', timestamp: '2024-10-26 14:28', node: 'RJ-UBS-NORTE', actor: 'Enf. Carla', role: 'APS', patient: 'P-104', action: 'WRITE_NOTE', result: 'APPROVED', policy: 'POL-FED-02' },
@@ -18,105 +18,89 @@ export const GlobalAuditPage: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] overflow-hidden animate-fade-in-up">
-      <div className="flex-shrink-0 flex justify-between items-end mb-6 px-1">
+    <div className="space-y-8 animate-fade-in-up pb-20 font-sans text-slate-900">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-end border-b-2 border-slate-900 pb-6">
         <div>
-          <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-2">
-            <Shield size={14} /> Trazabilidad Completa
+          <div className="flex items-center gap-2 text-blue-800 font-black text-[10px] uppercase tracking-[0.2em] mb-1">
+            <Shield size={14} /> Rastreabilidade Total
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Auditoría Global</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Auditoria Global</h1>
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 overflow-hidden">
-         {/* SIDEBAR FILTROS */}
-         <aside className="w-64 bg-white border border-slate-200 rounded-xl p-5 overflow-y-auto shrink-0 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-widest mb-4 border-b border-slate-100 pb-2">
-               <Filter size={12}/> Filtros
+      {/* FILTROS E BUSCA */}
+      <div className="flex gap-4 p-4 bg-slate-100 border border-slate-300 items-end">
+         <div className="flex-1 space-y-1">
+            <label className="text-[9px] font-bold text-slate-500 uppercase">Busca Livre (Hash, ID, Ator)</label>
+            <div className="relative">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/>
+               <input className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-sm text-xs font-bold outline-none uppercase" placeholder="BUSCAR..." />
             </div>
-            
-            <div className="space-y-4">
-               <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Fecha</label>
-                  <input type="date" className="w-full p-2 border border-slate-200 rounded-lg text-xs" />
-               </div>
-               <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Nodo Origen</label>
-                  <select className="w-full p-2 border border-slate-200 rounded-lg text-xs" value={filter.node} onChange={e => setFilter({...filter, node: e.target.value})}>
-                     <option value="">TODOS</option>
-                     <option value="SP-HOSP-CENTRAL">SP-HOSP-CENTRAL</option>
-                     <option value="RJ-UBS-NORTE">RJ-UBS-NORTE</option>
-                  </select>
-               </div>
-               <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Rol Actor</label>
-                  <select className="w-full p-2 border border-slate-200 rounded-lg text-xs" value={filter.role} onChange={e => setFilter({...filter, role: e.target.value})}>
-                     <option value="">TODOS</option>
-                     <option value="NODE_ADMIN">NODE_ADMIN</option>
-                     <option value="APS">APS</option>
-                     <option value="EXTERNAL">EXTERNAL</option>
-                  </select>
-               </div>
-               <div>
-                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Resultado</label>
-                  <select className="w-full p-2 border border-slate-200 rounded-lg text-xs" value={filter.outcome} onChange={e => setFilter({...filter, outcome: e.target.value})}>
-                     <option value="">TODOS</option>
-                     <option value="APPROVED">APPROVED</option>
-                     <option value="DENIED">DENIED</option>
-                  </select>
-               </div>
-               <button onClick={() => setFilter({ node: '', role: '', outcome: '' })} className="w-full py-2 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-200 mt-4">Limpiar</button>
-            </div>
-         </aside>
+         </div>
+         <div className="space-y-1 w-40">
+            <label className="text-[9px] font-bold text-slate-500 uppercase">Nó Origem</label>
+            <select className="w-full p-2 border border-slate-300 rounded-sm text-xs bg-white uppercase" value={filter.node} onChange={e => setFilter({...filter, node: e.target.value})}>
+               <option value="">TODOS</option>
+               <option>SP-HOSP-CENTRAL</option>
+            </select>
+         </div>
+         <div className="space-y-1 w-40">
+            <label className="text-[9px] font-bold text-slate-500 uppercase">Resultado</label>
+            <select className="w-full p-2 border border-slate-300 rounded-sm text-xs bg-white uppercase" value={filter.outcome} onChange={e => setFilter({...filter, outcome: e.target.value})}>
+               <option value="">TODOS</option>
+               <option>APPROVED</option>
+               <option>DENIED</option>
+            </select>
+         </div>
+         <button onClick={() => setFilter({ node: '', role: '', outcome: '' })} className="px-6 py-2 bg-slate-200 text-slate-600 rounded-sm text-[10px] font-black uppercase hover:bg-slate-300 h-[34px]">
+            Limpar
+         </button>
+      </div>
 
-         {/* TABLA PRINCIPAL */}
-         <main className="flex-1 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-               <div className="relative w-96">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14}/>
-                  <input className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-slate-900" placeholder="Buscar por ID Paciente, Actor o Hash..." />
-               </div>
-               <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase border border-blue-100">
-                  <Database size={12}/> Ledger Sync: OK
-               </div>
-            </div>
-
-            <div className="flex-1 overflow-auto">
-               <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest sticky top-0 z-10 shadow-sm">
-                     <tr>
-                        <th className="px-6 py-3 border-b border-slate-200">Fecha</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Nodo Origen</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Actor / Rol</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Paciente</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Acción</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Resultado</th>
-                        <th className="px-6 py-3 border-b border-slate-200">Política</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                     {events.map(ev => (
-                        <tr key={ev.id} onClick={() => openDrawer('GlobalEventDetailDrawer', ev)} className="hover:bg-slate-50 cursor-pointer transition-colors group">
-                           <td className="px-6 py-3 text-[10px] font-mono text-slate-500">{ev.timestamp}</td>
-                           <td className="px-6 py-3 text-[10px] font-bold text-slate-700">{ev.node}</td>
-                           <td className="px-6 py-3">
-                              <p className="text-[10px] font-bold text-slate-900">{ev.actor}</p>
-                              <p className="text-[8px] font-black text-slate-400 uppercase">{ev.role}</p>
-                           </td>
-                           <td className="px-6 py-3 text-[10px] font-mono text-slate-600">{ev.patient}</td>
-                           <td className="px-6 py-3 text-[10px] font-bold text-blue-600 uppercase">{ev.action}</td>
-                           <td className="px-6 py-3">
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${ev.result === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                 {ev.result}
-                              </span>
-                           </td>
-                           <td className="px-6 py-3 text-[9px] font-mono text-slate-400">{ev.policy}</td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
-         </main>
+      {/* TABELA DE EVENTOS */}
+      <div className="border border-slate-300 bg-white">
+         <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-300">
+               <tr>
+                  <th className="px-6 py-3 border-r border-slate-200">Timestamp</th>
+                  <th className="px-6 py-3 border-r border-slate-200">Organização</th>
+                  <th className="px-6 py-3 border-r border-slate-200">Ator / Papel</th>
+                  <th className="px-6 py-3 border-r border-slate-200">Ação</th>
+                  <th className="px-6 py-3 border-r border-slate-200">Paciente (Ref)</th>
+                  <th className="px-6 py-3 border-r border-slate-200 text-center">Resultado</th>
+                  <th className="px-6 py-3 text-right">Trilha</th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
+               {events.map(ev => (
+                  <tr key={ev.id} className="hover:bg-slate-50 transition-colors">
+                     <td className="px-6 py-3 border-r border-slate-200 font-mono text-slate-500">{ev.timestamp}</td>
+                     <td className="px-6 py-3 border-r border-slate-200 uppercase font-bold">{ev.node}</td>
+                     <td className="px-6 py-3 border-r border-slate-200">
+                        <p className="font-bold text-slate-900">{ev.actor}</p>
+                        <p className="text-[9px] uppercase text-slate-400">{ev.role}</p>
+                     </td>
+                     <td className="px-6 py-3 border-r border-slate-200 font-mono text-blue-700 uppercase">{ev.action}</td>
+                     <td className="px-6 py-3 border-r border-slate-200 font-mono text-slate-500">{ev.patient}</td>
+                     <td className="px-6 py-3 border-r border-slate-200 text-center">
+                        <span className={`px-2 py-0.5 border rounded-sm text-[9px] font-black uppercase ${ev.result === 'APPROVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                           {ev.result}
+                        </span>
+                     </td>
+                     <td className="px-6 py-3 text-right">
+                        <button 
+                           onClick={() => openModal('AuditTraceModal', ev)}
+                           className="text-[10px] font-black text-blue-700 uppercase hover:underline flex items-center justify-end gap-1"
+                        >
+                           Ver Trilha <Eye size={12}/>
+                        </button>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </table>
       </div>
     </div>
   );

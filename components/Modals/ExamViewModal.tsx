@@ -2,12 +2,27 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { X, FileText, Download, ShieldCheck, ExternalLink, Printer, Info } from 'lucide-react';
+import { downloadPDF } from '../../utils/downloadUtils';
 
 export const ExamViewModal: React.FC = () => {
   const { modalData, closeModal } = useAppStore();
   const [loading, setLoading] = useState(false);
 
   if (!modalData) return null;
+
+  const handleDownload = () => {
+      downloadPDF(
+          `${modalData.title.replace(/\s+/g, '_')}.pdf`,
+          modalData.title,
+          {
+              Paciente: 'MARIA SILVA',
+              Origem: modalData.lab,
+              Data: modalData.date,
+              Status: modalData.status
+          },
+          'LAUDO TÉCNICO SIMULADO\n\nResultados dentro da normalidade para o padrão de referência.\nExame assinado digitalmente.\n\nObservações: Exame realizado conforme protocolo.'
+      );
+  };
 
   return (
     <div className="flex flex-col h-[85vh] max-h-[800px]">
@@ -73,6 +88,7 @@ export const ExamViewModal: React.FC = () => {
           <Printer size={18} /> Imprimir
         </button>
         <button 
+          onClick={handleDownload}
           className="flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-all"
         >
           <Download size={20}/> Download Verificado

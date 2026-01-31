@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CuidiLogo } from '../../components/ui/CuidiLogo';
@@ -50,13 +49,13 @@ export const OnboardingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-100">
-              <HelpCircle size={14} /> Como funciona
+              <HelpCircle size={14} /> Integração Digital em Saúde
             </div>
             <h1 className="text-6xl lg:text-7xl font-extrabold text-slate-900 leading-[1.1]">
-              Regulação assistencial federada, <span className="text-blue-600">centrada no cidadão</span>.
+              Integração, Governança e Soberania de Dados
             </h1>
             <p className="text-xl text-slate-500 leading-relaxed max-w-2xl">
-              O Portal CUIDI conecta unidades do SUS em uma rede segura. Você acessa e compartilha dados conforme políticas do nó e consentimentos do paciente, com governança transparente e rastreável.
+              O CUIDI é uma solução para integração e síntese de dados em saúde, estruturada como espaço de dados federativo, com governança, interoperabilidade e conformidade regulatória. O sistema permite a gestão de dados clínicos e administrativos, respeitando a soberania institucional e a privacidade do paciente.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button onClick={() => navigate('/login')} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 group">
@@ -98,17 +97,17 @@ export const OnboardingPage: React.FC = () => {
         <section className="grid md:grid-cols-3 gap-8">
           {[{
             title: 'Paciente',
-            desc: 'Veja seu histórico, controle consentimentos, aprove/negue acessos restritos.',
+            desc: 'Acesse seu histórico, gerencie consentimentos e autorize acessos conforme a LGPD.',
             items: ['Histórico Clínico', 'Solicitações', 'Consentimentos', 'Acessos Restritos'],
             action: () => navigate('/login?tab=patient')
           }, {
-            title: 'Profissional (APS/UPA)',
-            desc: 'Regule casos, localize documentos federados e solicite dados ao paciente.',
+            title: 'Profissional de Saúde',
+            desc: 'Regule casos, localize documentos federados e solicite dados ao paciente de forma segura.',
             items: ['Fila de Regulação', 'Localizar Documentos', 'Solicitar Documento', 'Solicitar Acesso Restrito'],
             action: () => navigate('/login')
           }, {
             title: 'Administrador',
-            desc: 'Gerencie usuários, políticas do nó e auditoria conforme RBAC.',
+            desc: 'Gerencie usuários, políticas institucionais e auditoria conforme as normas de governança.',
             items: ['Usuários do Nó', 'Políticas Locais', 'Auditoria', 'Relatórios'],
             action: () => navigate('/login')
           }].map((card, idx) => (
@@ -131,21 +130,21 @@ export const OnboardingPage: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
               <ShieldCheck size={14}/> LGPD & Consentimentos
             </div>
-            <p className="text-slate-600 text-sm">Acesso a dados pessoais exige consentimento ativo do paciente, finalidade clara e papel permitido. Você controla quem vê o que e até quando.</p>
+            <p className="text-slate-600 text-sm">O acesso a dados pessoais exige consentimento ativo do paciente, finalidade definida e papel autorizado. O paciente controla quem acessa seus dados e pode revogar permissões a qualquer momento.</p>
             <button onClick={() => navigate('/privacy')} className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Ver Política</button>
           </div>
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-              <Layers size={14}/> Políticas por Nó
+              <Layers size={14}/> Políticas por Instituição
             </div>
-            <p className="text-slate-600 text-sm">Cada nó define políticas locais de acesso conforme RBAC. A federação respeita o escopo permitido e vigência da política do nó de origem.</p>
+            <p className="text-slate-600 text-sm">Cada instituição define políticas locais de acesso conforme seu perfil e necessidades. A federação respeita o escopo permitido e a vigência das políticas institucionais.</p>
             <button onClick={() => navigate('/federation/policies')} className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Ver Políticas</button>
           </div>
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
               <Server size={14}/> Ledger & Auditoria
             </div>
-            <p className="text-slate-600 text-sm">Toda ação crítica gera eventos em ledger e auditoria, com rastreabilidade total. Você vê acessos no seu log e pode exportar relatórios.</p>
+            <p className="text-slate-600 text-sm">Todas as ações críticas geram eventos em ledger e auditoria, com rastreabilidade total. O paciente pode auditar acessos e exportar relatórios de conformidade.</p>
             <button onClick={() => navigate('/reports')} className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Ver Relatórios</button>
           </div>
         </section>
@@ -154,7 +153,7 @@ export const OnboardingPage: React.FC = () => {
         <section className="grid md:grid-cols-2 gap-8 items-start">
           <div className="bg-white p-10 rounded-[2rem] border border-slate-200 shadow-sm space-y-4">
             <h3 className="text-xl font-black text-slate-900">Busca Federada</h3>
-            <p className="text-slate-600 text-sm">Localize documentos clínicos em nós federados respeitando governança e consentimentos. Metadados visíveis; acesso completo depende de aprovação.</p>
+            <p className="text-slate-600 text-sm">Localize documentos clínicos em instituições federadas respeitando governança e consentimentos. Metadados são visíveis; o acesso completo depende de aprovação e conformidade.</p>
             <button onClick={() => navigate('/help')} className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Ver como usar</button>
           </div>
           <div className="bg-slate-900 text-blue-400 p-10 rounded-[2rem] font-mono text-sm overflow-hidden relative shadow-2xl">
@@ -190,7 +189,7 @@ requestedScope: metadata
       {/* Footer simples */}
       <footer className="bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-10 flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-widest">
-          <p>© 2026 Portal CUIDI - Governança Federada</p>
+          <p>© 2026 CUIDI - Integração Digital de Informações em Processos de Saúde</p>
           <div className="flex gap-8">
             <span className="text-slate-500">BRASIL</span>
             <span className="text-slate-500">SUS</span>

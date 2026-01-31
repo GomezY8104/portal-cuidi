@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,7 +16,7 @@ import { useAppStore } from '../../store/useAppStore';
  */
 export const FederatedSearchPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openDrawer, attachedDocs, addAttachedDoc, removeAttachedDoc } = useAppStore();
+  const { openDrawer, attachedDocs, addAttachedDoc, removeAttachedDoc, updateNewCaseData } = useAppStore();
 
   // 1. Estados de Filtros
   const [search, setSearch] = useState('');
@@ -81,6 +82,17 @@ export const FederatedSearchPage: React.FC = () => {
     setFilterCategory('ALL');
   };
 
+  const handleFinish = () => {
+    // Si estamos en un flujo de "Nuevo Caso", forzamos el paso 4 (Documentos) en el store
+    // para que al volver, la página NewCase.tsx renderice la pestaña correcta.
+    if (window.location.hash.includes('/aps/case/new/search')) {
+        updateNewCaseData({ step: 4 });
+        navigate('/aps/new-case');
+    } else {
+        navigate(-1);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in-up pb-10 max-w-[1500px] mx-auto">
       
@@ -89,7 +101,7 @@ export const FederatedSearchPage: React.FC = () => {
         <div className="flex items-center gap-5">
           <button 
             type="button"
-            onClick={() => navigate('/aps/new-case')} 
+            onClick={handleFinish} 
             className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md transition-all active:scale-90"
           >
             <ArrowLeft size={22} />
@@ -117,7 +129,7 @@ export const FederatedSearchPage: React.FC = () => {
           </div>
           <button 
             type="button"
-            onClick={() => navigate('/aps/new-case')}
+            onClick={handleFinish}
             className="px-10 py-3.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-200 flex items-center gap-2 active:scale-95 transition-all hover:bg-blue-600"
           >
              Concluir Análise ({attachedDocs.length}) <CheckCircle size={16}/>
@@ -232,7 +244,7 @@ export const FederatedSearchPage: React.FC = () => {
                            <tr key={doc.id} className="hover:bg-blue-50/20 transition-all group">
                               <td className="px-8 py-6">
                                  <div className="flex items-center gap-5">
-                                    <div className={`w-14 h-14 rounded-2xl transition-all shadow-sm border border-slate-100 flex items-center justify-center ${isAttached ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 group-hover:bg-blue-600 group-hover:text-white'}`}>
+                                    <div className={`p-3 rounded-2xl transition-all shadow-sm border border-slate-100 ${isAttached ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 group-hover:text-blue-600'}`}>
                                        {doc.category.includes('IMAGEM') && <ImageIcon size={20}/>}
                                        {doc.category.includes('LABORATORIAIS') && <FileSearch size={20}/>}
                                        {doc.category.includes('LAUDOS') && <FileText size={20}/>}
@@ -274,7 +286,7 @@ export const FederatedSearchPage: React.FC = () => {
               </div>
 
               {filtered.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-20 text-center space-y-4">
+                <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-4">
                    <div className="w-20 h-20 bg-slate-50 text-slate-200 rounded-3xl flex items-center justify-center border-4 border-dashed border-slate-200 animate-pulse">
                      <Search size={40}/>
                    </div>

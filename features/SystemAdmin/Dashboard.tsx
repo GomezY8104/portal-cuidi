@@ -1,159 +1,179 @@
+
 import React from 'react';
 import { 
-  Globe, Activity, Shield, Users, 
-  ArrowUpRight, ArrowDownRight, Zap, 
-  Database, AlertCircle, CheckCircle2, Server, Eye
+  Globe, ArrowUpRight, ArrowRight, Activity, 
+  Server, Shield, AlertTriangle, FileText, Database 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 export const GlobalDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openDrawer } = useAppStore();
+  const { openModal } = useAppStore();
 
+  // 1. Tabela de KPIs
   const kpis = [
-    { label: 'Nodos Activos', value: '1,248', change: '+1.2%', link: '/system/nodes' },
-    { label: 'Solicitudes en Curso', value: '42,109', change: '+5.4%', link: '/system/audit?scope=cases' },
-    { label: 'Accesos DENIED Globales', value: '142', change: '-12%', link: '/system/audit?result=DENIED', alert: true },
-    { label: 'Políticas Activas', value: '8,921', change: '+0.5%', link: '/system/compliance' },
-    { label: 'Consentimientos Utilizados', value: '315k', change: '+8%', link: '/system/compliance' },
-    { label: 'Eventos Riesgo LGPD', value: '03', change: '0%', link: '/system/compliance', critical: true },
+    { id: '1', indicator: 'Nós Federados Ativos', value: '1,248', change: '+1.2%', target: '/system/nodes' },
+    { id: '2', indicator: 'Solicitações em Curso', value: '42,109', change: '+5.4%', target: '/system/audit?scope=cases' },
+    { id: '3', indicator: 'Acessos Negados (Block)', value: '142', change: '-12%', target: '/system/compliance' },
+    { id: '4', indicator: 'Políticas de Governança', value: '8,921', change: '+0.5%', target: '/system/compliance' },
+    { id: '5', indicator: 'Eventos de Risco LGPD', value: '03', change: '0%', target: '/system/compliance', critical: true },
   ];
 
-  const recentActivity = [
-    { date: 'Hoy, 10:42', node: 'SP-HOSP-CENTRAL', actor: 'Dr. Ricardo', role: 'PROVIDER', action: 'READ_CLINICAL', result: 'APPROVED', policy: 'POL-FED-01' },
-    { date: 'Hoy, 10:41', node: 'RJ-UBS-NORTE', actor: 'Enf. Carla', role: 'APS', action: 'WRITE_NOTE', result: 'APPROVED', policy: 'POL-FED-02' },
-    { date: 'Hoy, 10:40', node: 'MG-LAB-EST', actor: 'System', role: 'SYSTEM', action: 'SYNC_LEDGER', result: 'APPROVED', policy: 'SYS-INTERNAL' },
-    { date: 'Hoy, 10:38', node: 'EXT-RESEARCH', actor: 'API User', role: 'EXTERNAL', action: 'READ_SENSITIVE', result: 'DENIED', policy: 'NO_CONSENT' },
+  // 2. Atividade Recente
+  const activity = [
+    { id: 'EV-01', time: '10:42:15', node: 'SP-HOSP-CENTRAL', actor: 'Dr. Ricardo (MED)', action: 'READ_CLINICAL', result: 'APPROVED' },
+    { id: 'EV-02', time: '10:41:55', node: 'RJ-UBS-NORTE', actor: 'Enf. Carla (ENF)', action: 'WRITE_NOTE', result: 'APPROVED' },
+    { id: 'EV-03', time: '10:40:12', node: 'MG-LAB-EST', actor: 'System (BOT)', action: 'SYNC_LEDGER', result: 'APPROVED' },
+    { id: 'EV-04', time: '10:38:45', node: 'EXT-RESEARCH', actor: 'API User (EXT)', action: 'READ_SENSITIVE', result: 'DENIED' },
   ];
 
-  const systemHealth = [
-    { service: 'API Gateways (North)', status: 'OK', nodesOk: 420, nodesErr: 0 },
-    { service: 'Servicios de Documentos (Blob)', status: 'OK', nodesOk: 1240, nodesErr: 2 },
-    { service: 'Servicios de Consentimiento', status: 'WARN', nodesOk: 1200, nodesErr: 48 },
-    { service: 'Auditoría Federada (Ledger)', status: 'OK', nodesOk: 1248, nodesErr: 0 },
+  // 3. Saúde da Infraestrutura
+  const health = [
+    { service: 'API Gateway (Northbound)', status: 'OPERACIONAL', latency: '24ms', lastCheck: 'Agora' },
+    { service: 'Serviço de Consentimento', status: 'DEGRADADO', latency: '450ms', lastCheck: 'Há 1 min' },
+    { service: 'Ledger Audit Trail', status: 'OPERACIONAL', latency: '120ms', lastCheck: 'Agora' },
+    { service: 'Blob Storage (Docs)', status: 'OPERACIONAL', latency: '45ms', lastCheck: 'Agora' },
   ];
 
   return (
-    <div className="space-y-10 animate-fade-in-up pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-slate-200 pb-6">
+    <div className="space-y-12 animate-fade-in-up pb-20 font-sans text-slate-900">
+      
+      {/* HEADER */}
+      <div className="flex justify-between items-end border-b-2 border-slate-900 pb-6">
         <div>
-          <div className="flex items-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-widest mb-2">
-            <Globe size={14} /> Vista Central de la Federación
+          <div className="flex items-center gap-2 text-blue-800 font-black text-[10px] uppercase tracking-[0.2em] mb-1">
+            <Globe size={14} /> Visão Macro da Federação
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Dashboard Global</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">
-            Estado de la infraestructura, gobernanza y seguridad de toda la red.
-          </p>
         </div>
-        <div className="flex gap-3">
-           <div className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
-             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div> Red Operativa
-           </div>
+        <div className="flex gap-2">
+           <button onClick={() => window.location.reload()} className="px-6 py-2 bg-slate-100 text-slate-600 border border-slate-300 rounded-sm text-[10px] font-bold uppercase hover:bg-slate-200 transition-all">
+             Atualizar Dados
+           </button>
         </div>
       </div>
 
-      {/* KPI GLOBAL TABLE */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-           <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Indicadores Clave de Desempeño (KPI)</h3>
-        </div>
-        <table className="w-full text-left border-collapse">
-           <thead>
-              <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                 <th className="px-6 py-3">Indicador</th>
-                 <th className="px-6 py-3">Valor Actual</th>
-                 <th className="px-6 py-3">Variación (7d)</th>
-                 <th className="px-6 py-3 text-right">Acción</th>
-              </tr>
-           </thead>
-           <tbody className="divide-y divide-slate-50">
-              {kpis.map((k, i) => (
-                 <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 text-xs font-bold text-slate-700 uppercase">{k.label}</td>
-                    <td className={`px-6 py-4 text-sm font-black ${k.critical ? 'text-red-600' : 'text-slate-900'}`}>{k.value}</td>
-                    <td className={`px-6 py-4 text-xs font-bold ${k.change.includes('-') ? 'text-red-500' : 'text-emerald-500'}`}>{k.change}</td>
-                    <td className="px-6 py-4 text-right">
-                       <button onClick={() => navigate(k.link)} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center justify-end gap-1">
-                          Ver Detalle <ArrowUpRight size={12}/>
-                       </button>
-                    </td>
-                 </tr>
-              ))}
-           </tbody>
-        </table>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         {/* ACTIVIDAD RECIENTE */}
-         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col">
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Actividad Federada Reciente</h3>
-               <button onClick={() => navigate('/system/audit')} className="text-[9px] font-bold text-blue-600 uppercase tracking-widest hover:underline">Ver Todo</button>
-            </div>
-            <div className="flex-1 overflow-x-auto">
-               <table className="w-full text-left border-collapse">
-                  <thead>
-                     <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-white">
-                        <th className="px-6 py-3">Fecha</th>
-                        <th className="px-6 py-3">Nodo</th>
-                        <th className="px-6 py-3">Actor / Rol</th>
-                        <th className="px-6 py-3">Acción</th>
-                        <th className="px-6 py-3 text-right">Resultado</th>
+      {/* 1. KPIs GLOBAIS */}
+      <section className="space-y-4">
+         <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+            <Activity size={16} className="text-slate-500"/>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Indicadores Estratégicos (KPIs)</h3>
+         </div>
+         <div className="border border-slate-300 bg-white">
+            <table className="w-full text-left border-collapse">
+               <thead className="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-300">
+                  <tr>
+                     <th className="px-6 py-3 border-r border-slate-200">Indicador</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Valor Atual</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Variação (24h)</th>
+                     <th className="px-6 py-3 text-right">Navegação</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-200 text-xs font-bold text-slate-700">
+                  {kpis.map(k => (
+                     <tr key={k.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 border-r border-slate-200 uppercase">{k.indicator}</td>
+                        <td className={`px-6 py-3 border-r border-slate-200 font-mono text-sm ${k.critical ? 'text-red-600' : 'text-slate-900'}`}>{k.value}</td>
+                        <td className={`px-6 py-3 border-r border-slate-200 ${k.change.includes('+') ? 'text-emerald-600' : 'text-amber-600'}`}>{k.change}</td>
+                        <td className="px-6 py-3 text-right">
+                           <button onClick={() => navigate(k.target)} className="text-[10px] font-black text-blue-700 uppercase hover:underline flex items-center justify-end gap-1">
+                              Ver Detalhe <ArrowRight size={12}/>
+                           </button>
+                        </td>
                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                     {recentActivity.map((act, i) => (
-                        <tr key={i} onClick={() => openDrawer('GlobalEventDetailDrawer', act)} className="hover:bg-blue-50/30 transition-colors cursor-pointer group">
-                           <td className="px-6 py-3 text-[10px] font-bold text-slate-500">{act.date}</td>
-                           <td className="px-6 py-3 text-[10px] font-bold text-slate-700 uppercase">{act.node}</td>
-                           <td className="px-6 py-3">
-                              <p className="text-[10px] font-bold text-slate-900">{act.actor}</p>
-                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{act.role}</p>
-                           </td>
-                           <td className="px-6 py-3 text-[10px] font-mono text-slate-600 uppercase">{act.action}</td>
-                           <td className="px-6 py-3 text-right">
-                              <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${act.result === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                 {act.result}
-                              </span>
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
+                  ))}
+               </tbody>
+            </table>
          </div>
+      </section>
 
-         {/* SALUD DEL ECOSISTEMA */}
-         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-700">Salud del Ecosistema</h3>
-            </div>
-            <div className="flex-1 p-0">
-               <table className="w-full text-left border-collapse">
-                  <tbody className="divide-y divide-slate-50">
-                     {systemHealth.map((srv, i) => (
-                        <tr key={i} className="group hover:bg-slate-50 transition-colors">
-                           <td className="px-6 py-4">
-                              <div className="flex justify-between items-start mb-1">
-                                 <span className="text-[10px] font-bold text-slate-700 uppercase">{srv.service}</span>
-                                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${srv.status === 'OK' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{srv.status}</span>
-                              </div>
-                              <div className="flex gap-4 text-[9px] font-medium text-slate-500 mt-2">
-                                 <span className="flex items-center gap-1"><CheckCircle2 size={10} className="text-emerald-500"/> {srv.nodesOk} OK</span>
-                                 {srv.nodesErr > 0 && <span className="flex items-center gap-1 text-red-500"><AlertCircle size={10}/> {srv.nodesErr} Err</span>}
-                              </div>
-                              {srv.nodesErr > 0 && (
-                                 <button onClick={() => navigate('/system/nodes?status=error')} className="mt-2 text-[9px] font-black text-blue-600 uppercase hover:underline">Ver nodos afectados</button>
-                              )}
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
+      {/* 2. ATIVIDADE RECENTE */}
+      <section className="space-y-4">
+         <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+            <Database size={16} className="text-slate-500"/>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Atividade Federada Recente</h3>
          </div>
-      </div>
+         <div className="border border-slate-300 bg-white">
+            <table className="w-full text-left border-collapse">
+               <thead className="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-300">
+                  <tr>
+                     <th className="px-6 py-3 border-r border-slate-200">Data / Hora</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Nó de Origem</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Ator / Papel</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Ação Executada</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Resultado</th>
+                     <th className="px-6 py-3 text-right">Auditoria</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-200 text-xs font-medium text-slate-700">
+                  {activity.map(a => (
+                     <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 border-r border-slate-200 font-mono text-slate-500">{a.time}</td>
+                        <td className="px-6 py-3 border-r border-slate-200 uppercase font-bold">{a.node}</td>
+                        <td className="px-6 py-3 border-r border-slate-200 uppercase">{a.actor}</td>
+                        <td className="px-6 py-3 border-r border-slate-200 font-mono text-blue-700">{a.action}</td>
+                        <td className="px-6 py-3 border-r border-slate-200">
+                           <span className={`px-2 py-0.5 border rounded-sm text-[9px] font-black uppercase ${a.result === 'APPROVED' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                              {a.result}
+                           </span>
+                        </td>
+                        <td className="px-6 py-3 text-right">
+                           <button 
+                              onClick={() => openModal('AuditTraceModal', a)}
+                              className="text-[10px] font-black text-slate-500 uppercase hover:text-slate-900 hover:underline flex items-center justify-end gap-1"
+                           >
+                              <FileText size={12}/> Detalhes
+                           </button>
+                        </td>
+                     </tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
+      </section>
+
+      {/* 3. SAÚDE DA INFRAESTRUTURA */}
+      <section className="space-y-4">
+         <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+            <Server size={16} className="text-slate-500"/>
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Saúde da Infraestrutura</h3>
+         </div>
+         <div className="border border-slate-300 bg-white">
+            <table className="w-full text-left border-collapse">
+               <thead className="bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-300">
+                  <tr>
+                     <th className="px-6 py-3 border-r border-slate-200">Serviço Central</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Status</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Latência</th>
+                     <th className="px-6 py-3 border-r border-slate-200">Última Verificação</th>
+                     <th className="px-6 py-3 text-right">Logs</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-200 text-xs font-bold text-slate-700">
+                  {health.map((h, i) => (
+                     <tr key={i} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 border-r border-slate-200 uppercase">{h.service}</td>
+                        <td className="px-6 py-3 border-r border-slate-200">
+                           <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${h.status === 'OPERACIONAL' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
+                              <span className={h.status === 'OPERACIONAL' ? 'text-emerald-700' : 'text-amber-700'}>{h.status}</span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-3 border-r border-slate-200 font-mono">{h.latency}</td>
+                        <td className="px-6 py-3 border-r border-slate-200 text-slate-500">{h.lastCheck}</td>
+                        <td className="px-6 py-3 text-right">
+                           <button onClick={() => navigate('/system/audit')} className="text-[10px] font-black text-slate-500 uppercase hover:text-blue-700 hover:underline">
+                              Ver Logs
+                           </button>
+                        </td>
+                     </tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
+      </section>
+
     </div>
   );
 };

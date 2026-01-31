@@ -6,15 +6,9 @@ import { MOCK_USERS } from '../../mocks/seed';
 import { CuidiLogo } from '../../components/ui/CuidiLogo';
 
 // Logo CUIDI y gov.br desde public
-const CuidiLogoImg = ({ size = 100, className = "" }) => (
-  <img
-    src="/cuidi-logo.png"
-    alt="CUIDI Logo"
-    width={size}
-    height={size * 0.7}
-    className={className}
-    style={{ objectFit: 'contain' }}
-  />
+// Eliminar la función CuidiLogoImg y usar el componente CuidiLogo
+const CuidiLogoImg = () => (
+  <CuidiLogo />
 );
 
 const GovBrLogoImg = ({ size = 80, className = "" }) => (
@@ -143,6 +137,7 @@ export const LoginPage: React.FC = () => {
       {/* Lado Direito - Interface de Login */}
       <div className="flex-1 bg-slate-50 flex flex-col items-center justify-center p-2 lg:p-6 min-h-[320px] relative overflow-auto">
         {/* ...logos removidos... */}
+          <CuidiLogoImg />
         <div className="w-full max-w-sm space-y-6 mt-8 mb-4">
           <div className="flex bg-white p-1 rounded-[2rem] shadow-sm border border-slate-200">
             <button 

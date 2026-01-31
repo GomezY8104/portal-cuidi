@@ -35,7 +35,7 @@ export const MOCK_DOC_REQUESTS = [
     requester: 'Hospital das Clínicas - SP', 
     documentType: 'Comprovante de Residência Atualizado', 
     status: 'PENDING', 
-    priority: 'MEDIUM',
+    priority: 'MEDIUM', 
     description: 'Atualização de cadastro para prontuário eletrônico federado.',
     dueDate: '2024-11-25'
   }
@@ -147,7 +147,8 @@ export const MOCK_PROVIDER_CASES = [
     hasMessages: true,
     messages: [
         { sender: 'REGULADOR', text: 'Sra. Maria, precisamos que anexe o último teste ergométrico.', time: 'Ontem, 14:00' }
-    ]
+    ],
+    vitals: { pa: '140/90', fc: '88', spo2: '96', temp: '36.8' }
   },
   { 
     id: 'ENC-2024-702', 
@@ -177,7 +178,8 @@ export const MOCK_PROVIDER_CASES = [
         unit: 'Instituto de Olhos SP',
         address: 'Av. Brasil, 1500 - Jardins, São Paulo',
         instructions: 'Chegar com 15 minutos de antecedência. Levar óculos atuais.'
-    }
+    },
+    vitals: { pa: '130/80', fc: '78', spo2: '98', temp: '36.5' }
   },
   { 
     id: 'UPA-901', 
@@ -202,11 +204,12 @@ export const MOCK_PROVIDER_CASES = [
     hasMessages: true,
     messages: [
         { sender: 'SISTEMA', text: 'Transporte de ambulância solicitado.', time: 'Hoje, 08:15' }
-    ]
+    ],
+    vitals: { pa: '110/70', fc: '95', spo2: '99', temp: '37.0' }
   },
   { 
     id: 'ENC-204', 
-    patientId: 'p3',
+    patientId: 'p3', 
     patientName: 'ANA JULIA FONTES', 
     age: 29, 
     gender: 'FEMININO',
@@ -224,11 +227,12 @@ export const MOCK_PROVIDER_CASES = [
     date: '12/10/2024',
     daysQueue: 18,
     entity: 'Central de Regulação Leste',
-    hasMessages: false
+    hasMessages: false,
+    vitals: { pa: '115/75', fc: '70', spo2: '98', temp: '36.4' }
   },
   { 
     id: 'ENC-205', 
-    patientId: 'p4',
+    patientId: 'p4', 
     patientName: 'CARLOS EDUARDO SOUZA', 
     age: 63, 
     gender: 'MASCULINO',
@@ -257,11 +261,12 @@ export const MOCK_PROVIDER_CASES = [
         unit: 'Centro de Oncologia Estadual',
         address: 'Rua da Saúde, 500 - Bloco C',
         instructions: 'Trazer exames de sangue recentes.'
-    }
+    },
+    vitals: { pa: '125/80', fc: '76', spo2: '97', temp: '36.6' }
   },
   { 
     id: 'ENC-206', 
-    patientId: 'p5',
+    patientId: 'p5', 
     patientName: 'FERNANDA LIMA', 
     age: 36, 
     gender: 'FEMININO',
@@ -279,6 +284,7 @@ export const MOCK_PROVIDER_CASES = [
     date: '22/10/2024',
     daysQueue: 1,
     entity: 'Maternidade Escola',
-    hasMessages: false
+    hasMessages: false,
+    vitals: { pa: '150/95', fc: '90', spo2: '98', temp: '36.7' }
   }
 ];

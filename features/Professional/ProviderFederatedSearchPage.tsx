@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
@@ -15,10 +16,12 @@ export const ProviderFederatedSearchPage: React.FC = () => {
   const { id } = useParams(); // id será 'new' cuando venga del formulario de nuevo caso
   
   // Conexión con el Store Global para persistencia
-  const { openDrawer, attachedDocs, addAttachedDoc, removeAttachedDoc } = useAppStore();
+  const { openDrawer, attachedDocs, addAttachedDoc, removeAttachedDoc, user } = useAppStore();
   
   const [filter, setFilter] = useState({ node: 'ALL', spec: 'ALL', category: 'ALL' });
   const [search, setSearch] = useState('');
+
+  const isPatient = user?.role === 'PATIENT';
 
   const federatedLibrary = [
     { id: 'F1', name: 'TOMOGRAFIA COMPUTADORIZADA DE CRÂNIO (SEM CONTRASTE)', node: 'HOSPITAL DAS CLÍNICAS SP', type: 'IMAGEM', category: 'IMAGENS DICOM', date: '12/10/2024', spec: 'NEUROLOGIA' },
@@ -53,11 +56,7 @@ export const ProviderFederatedSearchPage: React.FC = () => {
     // Lógica de navegación robusta basada en el contexto de la URL
     if (location.pathname.includes('/upa/case/')) {
         // Retornar ao detalhe do caso UPA específico
-        // Se id for 'new', retorna para o formulário de novo caso
-        // Se id for um ID real, retorna para o detalhe daquele caso
         if (id === 'new') {
-             // Caso especial: Novo caso na UPA pode ter duas rotas, mas geralmente é via wizard ou direto
-             // Eliminado: referencia a /upa/case/new
              navigate(-1); 
         } else {
              navigate(`/upa/case/${id}`);
@@ -68,8 +67,10 @@ export const ProviderFederatedSearchPage: React.FC = () => {
     } else if (id === 'new') {
         // Novo caso APS
         navigate('/aps/new-case');
+    } else if (location.pathname.includes('/patient/')) {
+        // Retorno do paciente
+        navigate('/patient/documents');
     } else if (location.pathname.includes('/provider/')) {
-        // Si estamos en flujo de proveedor, volvemos atrás (Attendance Page)
         navigate(-1);
     } else {
         navigate(-1);
@@ -113,7 +114,7 @@ export const ProviderFederatedSearchPage: React.FC = () => {
             onClick={handleFinish}
             className="px-8 py-3.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center gap-2 active:scale-95 transition-all"
           >
-             Concluir ({attachedDocs.length}) <CheckCircle size={16}/>
+             {isPatient ? 'Voltar aos Documentos' : `Concluir (${attachedDocs.length})`} <CheckCircle size={16}/>
           </button>
         </div>
       </div>
@@ -238,7 +239,7 @@ export const ProviderFederatedSearchPage: React.FC = () => {
                                       className={`p-3 text-white rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2 group/btn ${isAttached ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-900 hover:bg-emerald-600'}`}
                                     >
                                        {isAttached ? <Trash2 size={20}/> : <Plus size={20} strokeWidth={3}/>}
-                                       <span className="text-[9px] font-black uppercase tracking-widest">{isAttached ? 'Remover' : 'Anexar'}</span>
+                                       <span className="text-[9px] font-black uppercase tracking-widest hidden xl:inline">{isAttached ? 'Remover' : (isPatient ? 'Importar' : 'Anexar')}</span>
                                     </button>
                                  </div>
                               </td>

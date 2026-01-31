@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,11 +10,9 @@ import { CuidiLogo } from '../../components/ui/CuidiLogo';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  // Permitir acceso público a la landing, pero limpiar usuario inválido
+  // Siempre limpiar la sesión al entrar a la landing
   React.useEffect(() => {
-    if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/org-signup')) {
-      localStorage.removeItem('user');
-    }
+    localStorage.removeItem('cuidi_user_session');
   }, []);
   const openDrawer = useAppStore(s => s.openDrawer);
 
@@ -25,12 +22,12 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
             <CuidiLogo size={80} />
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">Portal CUIDI</span>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">CUIDI: Integração Digital de Informações em Processos de Saúde</span>
           </div>
           
           <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => navigate('/about')} className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Sobre nós</button>
-            <button onClick={() => navigate('/how-it-works')} className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">A Federação</button>
+            <button onClick={() => navigate('/about')} className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Sobre o Projeto</button>
+            <button onClick={() => navigate('/how-it-works')} className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Como Funciona</button>
             <button onClick={() => navigate('/privacy')} className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Privacidade & LGPD</button>
             <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>
             <button 
@@ -59,46 +56,50 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 animate-in slide-in-from-left duration-1000">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-100">
-              <ShieldCheck size={14} /> Sistema Federado SUS
+              <ShieldCheck size={14} /> Integração Digital em Saúde
             </div>
             <h1 className="text-6xl lg:text-7xl font-extrabold text-slate-900 leading-[1.1]">
-              Sua Saúde, Seus Dados, <span className="text-blue-600">Nossa Federação.</span>
+              Integração, Governança e Soberania de Dados em Saúde
             </h1>
             <p className="text-xl text-slate-500 leading-relaxed max-w-xl">
-              Uma infraestrutura moderna de regulação assistencial focada em interoperabilidade segura, governança ativa e soberania total do paciente sobre seus dados.
+              O projeto CUIDI propõe uma solução objetiva para integração e síntese de dados em saúde, baseada em arquitetura federativa, interoperabilidade, conformidade regulatória e apoio à gestão clínica e administrativa.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button 
                 onClick={() => navigate('/login')}
                 className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-2 group"
               >
-                Começar agora <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                Acessar Plataforma <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
                 onClick={() => navigate('/org-signup')}
                 className="bg-white border-2 border-slate-200 text-slate-700 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-all"
               >
-                Cadastrar Instituição
+                Solicitar Integração Institucional
               </button>
             </div>
           </div>
           <div className="relative animate-in zoom-in duration-1000 delay-200">
-            <div className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-8 rotate-3 hover:rotate-0 transition-transform duration-500 relative z-10">
+            <div className="bg-white rounded-[2rem] shadow-2xl border border-slate-100 p-8 rotate-3 hover:rotate-0 transition-transform duration-500 relative z-10 overflow-visible">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 flex items-center justify-center"><CuidiLogo size={60} /></div>
+                  <div className="w-20 h-20 flex items-center justify-center bg-white rounded-full shadow-lg overflow-visible">
+                    <CuidiLogo size={80} />
+                  </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900">Governança em Tempo Real</p>
-                    <p className="text-xs text-slate-400">Ledger Verificado • 100% LGPD</p>
+                    <p className="text-lg font-black text-slate-900 animate-pulse">Governança em Tempo Real</p>
+                    <p className="text-xs text-slate-400 animate-fade-in-up">Ledger Verificado • 100% LGPD</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs font-bold text-green-500">CONECTADO</span>
+                  <span className="text-xs font-bold text-green-500 animate-fade-in">CONECTADO</span>
                 </div>
               </div>
               <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-12 bg-slate-50 rounded-xl animate-pulse"></div>
+                {["Transações auditadas em tempo real", "Consentimentos sob governança federada", "Rastreabilidade completa de acessos"].map((txt, i) => (
+                  <div key={i} className="h-12 bg-slate-50 rounded-xl flex items-center px-6 text-slate-700 font-bold text-base animate-in fade-in slide-in-from-bottom-4 duration-700" style={{animationDelay: `${300 + i * 200}ms`}}>
+                    <span className="animate-pulse">{txt}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -111,27 +112,14 @@ export const LandingPage: React.FC = () => {
       <section id="solucoes" className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Arquitetura de Próxima Geração</h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto">Desenvolvido com tecnologia de ponta para garantir que a regulação assistencial seja ágil, transparente e segura.</p>
+            <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Integração, Governança e Eficiência</h2>
+            <p className="text-slate-500 text-lg max-w-2xl mx-auto">A CUIDI oferece um espaço de dados federativo, interoperável e seguro, com orquestração inteligente e conformidade regulatória, promovendo eficiência clínica e administrativa.</p>
           </div>
-
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { 
-                icon: <Database className="text-blue-600" size={32} />, 
-                title: 'Sharing Ledger', 
-                desc: 'Todo acesso aos dados é registrado de forma imutável e auditável em tempo real.' 
-              },
-              { 
-                icon: <Lock className="text-blue-600" size={32} />, 
-                title: 'Governança Federada', 
-                desc: 'Políticas distribuídas por nó permitem soberania local com interoperabilidade nacional.' 
-              },
-              { 
-                icon: <Search className="text-blue-600" size={32} />, 
-                title: 'Busca Federada', 
-                desc: 'Localize documentos clínicos em toda a rede respeitando os níveis de consentimento.' 
-              },
+                { icon: <Database className="text-blue-600" size={32} />, title: 'Registro Imutável', desc: 'Todos os acessos e operações são registrados de forma auditável e transparente.' },
+                { icon: <Lock className="text-blue-600" size={32} />, title: 'Governança Federada', desc: 'Políticas distribuídas por instituição, com soberania dos dados e interoperabilidade.' },
+                { icon: <Search className="text-blue-600" size={32} />, title: 'Busca Federada', desc: 'Localize e integre informações clínicas em múltiplos sistemas, respeitando consentimentos e políticas.' },
             ].map((f, i) => (
               <div key={i} className="p-10 bg-white rounded-3xl border border-slate-100 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-100 transition-all group">
                 <div className="mb-6 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
@@ -149,43 +137,37 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer Atualizado */}
-      <footer className="bg-slate-50 border-t border-slate-200 pt-12 pb-8 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="col-span-2">
-              <div className="flex items-center gap-3 mb-8">
-                <CuidiLogo size={70} />
-                <span className="text-xl font-extrabold tracking-tight text-slate-900">Portal CUIDI</span>
-              </div>
-              <p className="text-slate-500 max-w-sm leading-relaxed">
-                Plataforma de regulação federada. Conectando o SUS através da transparência e inovação tecnológica.
-              </p>
+      {/* Footer tipo mega-menu */}
+      <footer className="bg-slate-900 border-t border-slate-800 mt-20">
+        <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-white">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <CuidiLogo size={54} />
+              <span className="text-2xl font-extrabold">Portal CUIDI</span>
             </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-6 uppercase tracking-widest text-xs">Sistema</h4>
-              <ul className="space-y-4 text-slate-600 text-sm">
-                <li><button onClick={() => navigate('/about')} className="hover:text-blue-600">Sobre nós</button></li>
-                <li><button onClick={() => navigate('/how-it-works')} className="hover:text-blue-600">Como funciona</button></li>
-                <li><button onClick={() => navigate('/api-docs')} className="hover:text-blue-600">Documentação API</button></li>
-                <li><button onClick={() => navigate('/network-status')} className="hover:text-blue-600">Status da Rede</button></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 mb-6 uppercase tracking-widest text-xs">Suporte</h4>
-              <ul className="space-y-4 text-slate-600 text-sm">
-                <li><button onClick={() => navigate('/help')} className="hover:text-blue-600">Central de Ajuda</button></li>
-                <li><button onClick={() => navigate('/terms')} className="hover:text-blue-600">Termos de Uso</button></li>
-                <li><button onClick={() => navigate('/privacy')} className="hover:text-blue-600">Política de Privacidade</button></li>
-                <li><button onClick={() => navigate('/contact')} className="hover:text-blue-600">Contato</button></li>
-              </ul>
-            </div>
+            <p className="text-slate-300 text-base max-w-xs mb-2">Plataforma nacional de integração, governança e transparência de dados em saúde para o SUS.</p>
           </div>
-          <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 text-slate-400 text-xs font-bold uppercase tracking-widest">
-            <p>© 2026 Portal CUIDI - Governança Federada de Dados.</p>
-            <div className="flex gap-8">
-            </div>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-blue-400 mb-4">Plataforma</h4>
+            <ul className="space-y-2">
+              <li><button onClick={() => navigate('/about')} className="hover:underline text-left">Sobre o CUIDI</button></li>
+              <li><button onClick={() => { window.location.hash = '#/how-it-works'; }} className="hover:underline text-left">Como Funciona</button></li>
+              <li><button onClick={() => navigate('/changelog')} className="hover:underline text-left">Novidades e Versões</button></li>
+              <li><button onClick={() => navigate('/api-docs')} className="hover:underline text-left">API para Desenvolvedores</button></li>
+              <li><button onClick={() => navigate('/network-status')} className="hover:underline text-left">Status da Rede</button></li>
+            </ul>
           </div>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-blue-400 mb-4">Transparência</h4>
+            <ul className="space-y-2">
+              <li><button onClick={() => navigate('/terms')} className="hover:underline text-left">Termos de Uso</button></li>
+              <li><button onClick={() => navigate('/privacy')} className="hover:underline text-left">Privacidade & LGPD</button></li>
+              <li><button onClick={() => { window.location.hash = '#/help'; }} className="hover:underline text-left">Canal de Suporte</button></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 pb-6 flex flex-col md:flex-row items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-widest">
+          <span>© 2026 CUIDI. Todos os direitos reservados.</span>
         </div>
       </footer>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { 
@@ -7,6 +8,7 @@ import {
   Lock, Globe, FileDown, Download, Loader2,
   CheckCircle2, Trash2, X
 } from 'lucide-react';
+import { downloadPDF } from '../../utils/downloadUtils';
 
 export const ClinicalDetailDrawer: React.FC = () => {
   const { drawerData, closeDrawer } = useAppStore();
@@ -17,8 +19,17 @@ export const ClinicalDetailDrawer: React.FC = () => {
   const handleDownloadOriginal = () => {
     setDownloading(true);
     setTimeout(() => {
+      downloadPDF(
+          `Documento_Original_${drawerData.id || 'DOC'}.pdf`,
+          drawerData.detail || 'Documento Clínico',
+          {
+              Instituição: drawerData.hospital || 'N/A',
+              Profissional: drawerData.doctor || 'N/A',
+              Data: drawerData.date
+          },
+          'Este é um documento original assinado digitalmente.\nA integridade foi verificada no Ledger Nacional.\n\nConteúdo:\nExame realizado com sucesso. Parâmetros normais.'
+      );
       setDownloading(false);
-      alert('Documento original assinado pelo nó "' + drawerData.hospital + '" baixado com sucesso. Integridade Ledger verificada.');
     }, 1500);
   };
 

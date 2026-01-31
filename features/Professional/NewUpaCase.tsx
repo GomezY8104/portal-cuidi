@@ -451,7 +451,7 @@ export const NewUpaCasePage: React.FC = () => {
                {/* BARRA DE FERRAMENTAS DOCUMENTAL */}
                <div className="flex flex-wrap gap-4 border-b border-slate-200 pb-6">
                   <button 
-                    // Eliminado: navegación a /upa/case/new/search
+                    onClick={() => navigate('/upa/case/new/search')} 
                     className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-sm font-bold text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm active:scale-95"
                   >
                      <Globe size={14}/> Busca Federada

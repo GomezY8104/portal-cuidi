@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   GitPullRequest, MessageSquare, Clock, CheckCircle, 
@@ -17,7 +18,7 @@ export const RegulationCasesPage: React.FC = () => {
 
   // --- OBTENER CASOS DEL MOCK CENTRALIZADO ---
   const myCases = useMemo(() => {
-      // Para efectos de DEMO, si soy admin muestro todo, si soy paciente muestro los mios (simulado)
+      // Para efeitos de DEMO, se sou admin mostro tudo, se sou paciente mostro os meus (simulado)
       if (user?.role === 'PATIENT') {
           return MOCK_PROVIDER_CASES.filter(c => c.patientName.toUpperCase() === user.name.toUpperCase() || c.patientId === user.id);
       }
@@ -131,11 +132,11 @@ export const RegulationCasesPage: React.FC = () => {
         </div>
 
         <button 
-             onClick={() => navigate('/patient/search')}
+             onClick={() => navigate('/patient/documents')}
              className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 hover:border-slate-400 hover:text-slate-900 rounded-lg font-bold text-xs uppercase tracking-wide shadow-sm transition-all flex items-center gap-2 active:scale-95"
            >
              <Globe size={16} className="text-blue-600"/> 
-             Busca Federada
+             Meus Documentos
         </button>
       </div>
 
@@ -250,7 +251,7 @@ export const RegulationCasesPage: React.FC = () => {
                            {item.type === 'DOC_REQ' && <p className="text-[9px] font-bold text-red-500 uppercase mt-0.5">Vencimento</p>}
                         </td>
 
-                        {/* BOTONES DE ACCIÓN (DOBLE) */}
+                        {/* BOTONES DE ACCIÓN (TRIPLE) */}
                         <td className="px-6 py-4 align-middle text-right">
                            <div className="flex flex-col gap-2 items-end">
                               {/* Botón Acompanhar (Siempre activo) */}
@@ -262,17 +263,33 @@ export const RegulationCasesPage: React.FC = () => {
                               </button>
 
                               {/* Botón Anexar (Condicional) */}
-                              <button 
-                                onClick={() => handleAttach(item)}
-                                disabled={!item.requiresAttachment}
-                                className={`w-[140px] px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all flex items-center justify-center gap-2 shadow-sm border ${
-                                   item.requiresAttachment 
-                                   ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer' 
-                                   : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                                }`}
-                              >
-                                 <FilePlus size={12}/> Anexar Doc.
-                              </button>
+                              <div className="flex gap-1 w-[140px]">
+                                <button 
+                                    onClick={() => handleAttach(item)}
+                                    disabled={!item.requiresAttachment}
+                                    className={`flex-1 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition-all flex items-center justify-center gap-1 shadow-sm border ${
+                                    item.requiresAttachment 
+                                    ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 cursor-pointer' 
+                                    : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                    }`}
+                                    title="Upload Local"
+                                >
+                                    <FilePlus size={12}/> Anexar
+                                </button>
+                                {/* BOTÓN "ANEXAR DA REDE" (Busca Federada) */}
+                                <button
+                                    onClick={() => navigate('/patient/documents')}
+                                    disabled={!item.requiresAttachment}
+                                    className={`px-2 py-1.5 rounded-lg transition-all shadow-sm border ${
+                                        item.requiresAttachment 
+                                        ? 'bg-white border-blue-600 text-blue-600 hover:bg-blue-50' 
+                                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                    }`}
+                                    title="Anexar da Rede (Busca Federada)"
+                                >
+                                    <Globe size={14}/>
+                                </button>
+                              </div>
                            </div>
                         </td>
                      </tr>

@@ -1,11 +1,11 @@
+
 import React, { useState } from 'react';
 import { 
   ArrowLeft, Activity, ShieldCheck, Globe, 
-  MessageCircle, Send, FileText, Lock, 
-  CheckCircle, Clock, Search, Zap,
-  Navigation, ChevronDown, MessageSquareText,
-  ExternalLink, Check, X, Building2, UserPlus,
-  Trash2, Eye
+  MessageCircle, FileText, Zap,
+  Navigation, MessageSquareText,
+  Check, Building2, UserPlus,
+  Trash2, Eye, History
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
@@ -18,155 +18,281 @@ export const RegulationCaseDetailPage: React.FC = () => {
   const [priority, setPriority] = useState<'ALTA' | 'MÉDIA' | 'BAIXA' | null>(null);
   const [eligibility, setEligibility] = useState<'APTO' | 'INAPTO' | 'PENDENTE' | null>(null);
   const [justification, setJustification] = useState('');
-  const [networkAction, setNetworkAction] = useState('');
-
+  
   const patient = {
-    name: 'MANOEL GOMES DA SILVA',
+    name: 'MARIA APARECIDA DA SILVA',
     cpf: '123.456.789-00',
     cns: '700000123456789',
     specialty: 'CARDIOLOGIA',
-    clinicalNote: 'Paciente apresenta dor precordial tipo queimação há 3 horas, irradiada para membro superior esquerdo. Troponina positiva no nó de origem. Histórico de HAS e Tabagismo.'
+    clinicalNote: 'Paciente apresenta dor precordial tipo queimação há 3 horas, irradiada para membro superior esquerdo. Troponina positiva no nó de origem. Histórico de HAS e Tabagismo. Solicito vaga para cateterismo.'
   };
 
   const handleExecution = () => {
-    if (networkAction === 'RETURN') {
-      openModal('ReturnCaseModal', { patient: patient.name, id });
-      return;
-    }
-    if (!eligibility) { alert('Selecione um veredito técnico.'); return; }
+    if (!eligibility) { alert('Selecione um veredito técnico (Passo 1).'); return; }
+    
     if (eligibility === 'INAPTO') {
       openModal('NotificationRecusalModal', { patient: patient.name, id });
-    } else if (eligibility === 'PENDENTE') {
+      return;
+    } 
+    
+    if (eligibility === 'PENDENTE') {
       openModal('DocRequestModal', { patient: patient.name, id });
-    } else {
-      if (selectedVagas.length === 0) { alert('Selecione ao menos uma vaga na orquestração para homologar APTO.'); return; }
-      openModal('EligibilityModal', { patient: patient.name, eligibility, priority, justification, vagas: selectedVagas });
+      return;
     }
+
+    // Se APTO
+    if (!priority) { alert('Defina a classificação de risco (Passo 2).'); return; }
+    if (!justification) { alert('A justificativa técnica é obrigatória (Passo 3).'); return; }
+    if (selectedVagas.length === 0) { alert('Selecione ao menos um prestador na Orquestração (Passo 5).'); return; }
+    
+    openModal('EligibilityModal', { patient: patient.name, eligibility, priority, justification, vagas: selectedVagas });
+  };
+
+  // Função auxiliar para abrir chat com contexto correto
+  const handleOpenChat = (target: 'ORIGIN' | 'PROVIDER') => {
+    openDrawer('CaseSummaryDrawer', { 
+        id: id || 'REG-2024-891',
+        title: 'Solicitação de Regulação',
+        subtitle: patient.specialty,
+        entity: target === 'ORIGIN' ? 'UBS JARDIM SUL' : (selectedVagas[0]?.name || 'Prestador'),
+        priority: priority || 'A DEFINIR',
+        status: eligibility || 'EM ANÁLISE',
+        description: patient.clinicalNote, // Passando a descrição para o resumo
+        patientName: patient.name, // Dados extras para o resumo
+        patientCpf: patient.cpf,
+        initialTab: 'CHAT',
+        chatTarget: target // Flag para o Drawer saber o título
+    });
   };
 
   return (
-    <div className="space-y-4 animate-fade-in-up pb-10 font-sans">
-      <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 flex justify-between items-center shadow-sm">
+    <div className="space-y-6 animate-fade-in-up pb-20 font-sans text-slate-900">
+      
+      {/* HEADER DE CASO */}
+      <div className="bg-white px-6 py-4 rounded-sm border border-slate-300 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 bg-slate-50 border border-slate-100 rounded-lg text-slate-400 hover:text-blue-600 transition-all">
+          <button onClick={() => navigate(-1)} className="p-2 border border-slate-200 rounded-sm text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all">
             <ArrowLeft size={18} />
           </button>
           <div>
             <h1 className="text-xl font-black text-slate-900 uppercase leading-none">{patient.name}</h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-widest">Protocolo Federado: #{id || 'UPA-901'} • {patient.specialty}</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase mt-1 tracking-widest">
+               Protocolo: <span className="text-blue-700">{id || 'REG-2024-891'}</span> • {patient.specialty}
+            </p>
           </div>
         </div>
         
         <div className="flex items-center gap-6">
-           <div className="text-right border-r border-slate-100 pr-6">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">SLA Regulação</p>
+           <div className="text-right border-r border-slate-200 pr-6">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">SLA Restante</p>
               <p className="text-lg font-black text-red-600 tabular-nums leading-none">00:42:15</p>
            </div>
-           <div className="flex items-center gap-3">
-             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-               <ShieldCheck size={18}/>
+           <div className="flex items-center gap-2">
+             <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-full">
+               <ShieldCheck size={16}/>
              </div>
-             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Ledger Sync: OK</p>
+             <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Governança</p>
+                <p className="text-[10px] font-bold text-emerald-700 uppercase">Sync OK</p>
+             </div>
            </div>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xl ring-4 ring-blue-500/5">
-        <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
-          <div className="flex items-center gap-2 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">
-            <Zap size={12} fill="currentColor" className="text-slate-900"/> Matriz de Decisão Assistencial Federada
-          </div>
-        </div>
+      {/* CONTEXTO CLÍNICO */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div className="lg:col-span-2 space-y-6">
+            
+            {/* RESUMO CLÍNICO */}
+            <section className="bg-slate-50 border border-slate-300 p-6 rounded-sm space-y-2">
+               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Activity size={14}/> Resumo Clínico (Origem)
+               </h3>
+               <p className="text-sm font-medium text-slate-800 leading-relaxed bg-white p-4 border border-slate-200 rounded-sm">
+                  "{patient.clinicalNote}"
+               </p>
+            </section>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[1100px] table-fixed">
-            <thead>
-              <tr className="bg-slate-50/30 border-b border-slate-100">
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase w-[160px]">01. Veredito</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase w-[150px]">02. Risco</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase text-center w-[70px]">03. Just.</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase w-[240px]">04. Busca Federada</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase w-[260px]">05. Orquestração</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase w-[260px]">06. Ação em Rede</th>
-                <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase text-right w-[90px]">Exec.</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-4 py-4 align-top">
-                  <select value={eligibility || ''} onChange={e => setEligibility(e.target.value as any)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black uppercase outline-none focus:border-blue-500 shadow-sm">
-                    <option value="" disabled>SELECIONAR...</option>
-                    <option value="APTO">APTO (ACEITAR)</option>
-                    <option value="INAPTO">REJEITAR</option>
-                    <option value="PENDENTE">PENDENTE</option>
-                  </select>
-                </td>
-                <td className="px-4 py-4 align-top">
-                  <select value={priority || ''} onChange={e => setPriority(e.target.value as any)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black uppercase outline-none focus:border-blue-500 shadow-sm">
-                    <option value="" disabled>DEFINIR...</option>
-                    <option value="ALTA">ALTA (URGENTE)</option>
-                    <option value="MÉDIA">MÉDIA</option>
-                    <option value="BAIXA">BAIXA (ROTINA)</option>
-                  </select>
-                </td>
-                <td className="px-4 py-4 text-center align-top">
-                  <button onClick={() => openModal('JustificationModal', { text: justification, onSave: setJustification })} className={`p-2 rounded-lg transition-all border ${justification ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-slate-50 text-slate-400 border-slate-100'}`}><MessageSquareText size={18}/></button>
-                </td>
-                <td className="px-4 py-4 align-top">
-                   <button onClick={() => navigate(`/regulator/case/${id}/search`)} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white shadow-sm transition-all text-[10px] font-black uppercase">
-                     <Globe size={16}/> Buscar Docs ({attachedDocs.length})
-                   </button>
-                </td>
-                <td className="px-4 py-4 align-top">
-                   <button onClick={() => navigate(`/regulator/case/${id}/orchestrate`)} className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white shadow-sm transition-all text-[10px] font-black uppercase">
-                     <Navigation size={16}/> Orquestrar ({selectedVagas.length})
-                   </button>
-                </td>
-                <td className="px-4 py-4 align-top">
-                  <select value={networkAction} onChange={e => setNetworkAction(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-600 uppercase outline-none focus:border-blue-500 shadow-sm">
-                    <option value="">SELECIONAR AÇÃO...</option>
-                    <option value="DOCS_PACIENTE">PEDIR DOCS (AO PACIENTE)</option>
-                    <option value="TRANSFER_PRESTADOR" disabled={eligibility !== 'APTO' || selectedVagas.length === 0}>TRANSFERIR AO PRESTADOR</option>
-                    <option value="RETURN">DEVOLVER ORIGEM (UPA/APS)</option>
-                  </select>
-                </td>
-                <td className="px-4 py-4 text-right align-top">
-                  <button onClick={handleExecution} className="w-10 h-10 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-blue-600 transition-all flex items-center justify-center mx-auto"><Zap size={16} fill="currentColor"/></button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            {/* MATRIZ DE DECISÃO (GRID LAYOUT - SEM SCROLL) */}
+            <section className="bg-white border-2 border-slate-800 rounded-sm overflow-hidden shadow-lg">
+               {/* Header Grid */}
+               <div className="grid grid-cols-6 bg-slate-100 border-b border-slate-200 text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">
+                  <div className="py-3 border-r border-slate-200">01. Veredito</div>
+                  <div className="py-3 border-r border-slate-200">02. Risco</div>
+                  <div className="py-3 border-r border-slate-200">03. Just.</div>
+                  <div className="py-3 border-r border-slate-200">04. Busca</div>
+                  <div className="py-3 border-r border-slate-200">05. Orquestra</div>
+                  <div className="py-3">06. Executar</div>
+               </div>
 
-      {/* DOCUMENTOS ANEXADOS POR BUSCA FEDERADA */}
-      <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-         <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-            <FileText size={16} className="text-blue-600"/> Documentação Técnica de Suporte ({attachedDocs.length})
-         </h3>
-         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {attachedDocs.length === 0 && (
-              <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum documento federado anexado ainda.</p>
-              </div>
-            )}
-            {attachedDocs.map(doc => (
-              <div key={doc.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-blue-300 transition-all">
-                 <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="p-2 bg-white rounded-lg text-blue-600 shadow-sm"><FileText size={14}/></div>
-                    <div className="overflow-hidden">
-                       <p className="text-[10px] font-black text-slate-900 truncate uppercase leading-tight">{doc.name}</p>
-                       <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{doc.node}</p>
-                    </div>
-                 </div>
-                 <div className="flex gap-1 ml-2">
-                    <button onClick={() => openDrawer('ClinicalDetailDrawer', {...doc, detail: doc.name, hospital: doc.node, hasOriginal: true})} className="p-1.5 text-slate-300 hover:text-blue-600"><Eye size={16}/></button>
-                    <button onClick={() => removeAttachedDoc(doc.id)} className="p-1.5 text-slate-300 hover:text-red-600"><Trash2 size={16}/></button>
-                 </div>
-              </div>
-            ))}
+               {/* Body Grid */}
+               <div className="grid grid-cols-6 p-2 gap-2 bg-slate-50 items-start">
+                  
+                  {/* Passo 1: Veredito */}
+                  <div className="p-2">
+                      <select 
+                        value={eligibility || ''} 
+                        onChange={e => setEligibility(e.target.value as any)} 
+                        className="w-full p-2 border-2 border-slate-300 rounded-sm text-[10px] font-bold uppercase outline-none focus:border-blue-700 bg-white shadow-sm"
+                      >
+                         <option value="" disabled>SELECIONAR...</option>
+                         <option value="APTO">APTO</option>
+                         <option value="INAPTO">INAPTO</option>
+                         <option value="PENDENTE">PENDENTE</option>
+                      </select>
+                  </div>
+
+                  {/* Passo 2: Risco */}
+                  <div className="p-2">
+                      <select 
+                        value={priority || ''} 
+                        onChange={e => setPriority(e.target.value as any)} 
+                        disabled={eligibility !== 'APTO'}
+                        className="w-full p-2 border-2 border-slate-300 rounded-sm text-[10px] font-bold uppercase outline-none focus:border-blue-700 bg-white disabled:bg-slate-200 disabled:text-slate-400 shadow-sm"
+                      >
+                         <option value="" disabled>DEFINIR...</option>
+                         <option value="ALTA">ALTA</option>
+                         <option value="MÉDIA">MÉDIA</option>
+                         <option value="BAIXA">BAIXA</option>
+                      </select>
+                  </div>
+
+                  {/* Passo 3: Justificativa */}
+                  <div className="p-2 flex justify-center">
+                      <button 
+                        onClick={() => openModal('JustificationModal', { text: justification, onSave: setJustification })} 
+                        className={`w-full p-2 border-2 rounded-sm transition-all flex items-center justify-center shadow-sm ${justification ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-slate-400 border-slate-300 hover:border-slate-500'}`}
+                        title="Inserir Justificativa"
+                      >
+                         <MessageSquareText size={16}/>
+                      </button>
+                  </div>
+
+                  {/* Passo 4: Busca */}
+                  <div className="p-2">
+                      <button 
+                        onClick={() => navigate(`/regulator/case/${id}/search`)} 
+                        className="w-full py-2 bg-white border border-slate-300 text-slate-700 font-bold text-[9px] uppercase hover:bg-slate-100 flex items-center justify-center gap-1 rounded-sm shadow-sm"
+                      >
+                         <Globe size={12}/> Docs ({attachedDocs.length})
+                      </button>
+                  </div>
+
+                  {/* Passo 5: Orquestração */}
+                  <div className="p-2">
+                      <button 
+                        onClick={() => navigate(`/regulator/case/${id}/orchestrate`)} 
+                        disabled={eligibility !== 'APTO'}
+                        className={`w-full py-2 border text-slate-700 font-bold text-[9px] uppercase flex items-center justify-center gap-1 rounded-sm shadow-sm transition-all ${
+                            eligibility === 'APTO' 
+                            ? 'bg-white border-slate-300 hover:bg-slate-100' 
+                            : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                        }`}
+                      >
+                         <Navigation size={12}/> Vagas ({selectedVagas.length})
+                      </button>
+                  </div>
+
+                  {/* Passo 6: Executar */}
+                  <div className="p-2">
+                      <button 
+                        onClick={handleExecution} 
+                        className="w-full py-2 bg-slate-900 text-white font-black text-[9px] uppercase hover:bg-blue-700 rounded-sm shadow-md transition-all flex items-center justify-center gap-1"
+                      >
+                         OK <Check size={12}/>
+                      </button>
+                  </div>
+
+               </div>
+            </section>
+
+            {/* SEÇÃO DOCUMENTOS */}
+            <section className="bg-white border border-slate-300 rounded-sm overflow-hidden">
+               <div className="bg-slate-100 px-6 py-3 border-b border-slate-300 flex justify-between items-center">
+                  <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                     <FileText size={14}/> Documentação do Caso
+                  </h3>
+               </div>
+               <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-[9px] tracking-wider text-slate-500">
+                     <tr>
+                        <th className="px-6 py-3">Tipo</th>
+                        <th className="px-6 py-3">Origem</th>
+                        <th className="px-6 py-3">Data</th>
+                        <th className="px-6 py-3 text-center">Status</th>
+                        <th className="px-6 py-3 text-right">Ação</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                     {attachedDocs.length === 0 && (
+                        <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic font-medium">Nenhum documento vinculado. Utilize a Busca Federada.</td></tr>
+                     )}
+                     {attachedDocs.map(doc => (
+                        <tr key={doc.id} className="hover:bg-slate-50">
+                           <td className="px-6 py-3 font-bold uppercase">{doc.name}</td>
+                           <td className="px-6 py-3 uppercase text-[10px]">{doc.node}</td>
+                           <td className="px-6 py-3 font-mono text-[10px]">{doc.date}</td>
+                           <td className="px-6 py-3 text-center"><span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[9px] font-black uppercase">Verificado</span></td>
+                           <td className="px-6 py-3 text-right">
+                              <div className="flex justify-end gap-2">
+                                 <button onClick={() => openDrawer('ClinicalDetailDrawer', {...doc, hasOriginal: true})} className="text-slate-400 hover:text-blue-700"><Eye size={14}/></button>
+                                 <button onClick={() => removeAttachedDoc(doc.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14}/></button>
+                              </div>
+                           </td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            </section>
+
          </div>
-      </section>
+
+         {/* COLUNA DIREITA: COMUNICAÇÃO & HISTÓRICO */}
+         <div className="space-y-6">
+            <div className="bg-white border border-slate-300 rounded-sm p-6 space-y-4">
+               <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 border-b border-slate-100 pb-2">
+                  <MessageCircle size={14}/> Comunicação Oficial
+               </h3>
+               <div className="space-y-2">
+                  <button onClick={() => handleOpenChat('ORIGIN')} className="w-full py-3 bg-blue-50 text-blue-700 border border-blue-200 font-bold text-xs uppercase hover:bg-blue-100 rounded-sm transition-all flex items-center justify-center gap-2">
+                     <Building2 size={14}/> Falar com Origem (APS/UPA)
+                  </button>
+                  <button 
+                    onClick={() => handleOpenChat('PROVIDER')} 
+                    className="w-full py-3 bg-white text-slate-600 border border-slate-300 font-bold text-xs uppercase hover:bg-slate-50 rounded-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50" 
+                    disabled={selectedVagas.length === 0}
+                  >
+                     <UserPlus size={14}/> Falar com Prestador
+                  </button>
+               </div>
+               <p className="text-[9px] text-slate-400 italic text-center px-2">
+                  "Toda mensagem trocada é anexada ao processo regulatório para fins de auditoria."
+               </p>
+            </div>
+
+            <div className="bg-white border border-slate-300 rounded-sm p-0 overflow-hidden">
+               <div className="bg-slate-100 px-6 py-3 border-b border-slate-300">
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                     <History size={14}/> Linha do Tempo
+                  </h3>
+               </div>
+               <div className="p-4 max-h-[300px] overflow-y-auto">
+                  <div className="relative pl-4 border-l-2 border-slate-200 space-y-6">
+                     <div className="relative">
+                        <div className="absolute -left-[21px] top-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+                        <p className="text-[10px] font-black text-slate-900 uppercase">Análise Iniciada</p>
+                        <p className="text-[9px] font-mono text-slate-400">Agora • Regulador Central</p>
+                     </div>
+                     <div className="relative">
+                        <div className="absolute -left-[21px] top-0 w-3 h-3 bg-slate-300 rounded-full border-2 border-white"></div>
+                        <p className="text-[10px] font-black text-slate-900 uppercase">Solicitação Criada</p>
+                        <p className="text-[9px] font-mono text-slate-400">Ontem, 14:30 • UPA Zona Sul</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
     </div>
   );
 };

@@ -1,16 +1,19 @@
+
 import React from 'react';
 import { 
   FolderOpen, Search, Filter, Plus, 
   FileText, CheckCircle, Clock, 
   ChevronRight, UploadCloud, Trash2, 
   Download, History, AlertCircle, Info,
-  AlertTriangle, Timer
+  AlertTriangle, Timer, Globe
 } from 'lucide-react';
 import { MOCK_DOC_REQUESTS } from '../../mocks/seed';
 import { useAppStore } from '../../store/useAppStore';
+import { useNavigate } from 'react-router-dom';
 
 export const PatientDocumentsPage: React.FC = () => {
   const { openDrawer } = useAppStore();
+  const navigate = useNavigate();
 
   const getDaysLeft = (dateStr: string) => {
     const due = new Date(dateStr);
@@ -29,12 +32,20 @@ export const PatientDocumentsPage: React.FC = () => {
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Meus Documentos</h1>
           <p className="text-slate-500 mt-2 text-lg max-w-2xl font-medium">Responda a solicitações de reguladores e organize seus arquivos de saúde para agilizar atendimentos.</p>
         </div>
-        <button 
-          onClick={() => openDrawer('UploadDocumentDrawer')}
-          className="px-10 py-5 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3"
-        >
-          <UploadCloud size={20} /> Novo Upload
-        </button>
+        <div className="flex gap-3">
+            <button 
+              onClick={() => navigate('/patient/documents/search')}
+              className="px-8 py-5 bg-white border border-slate-200 text-slate-700 rounded-3xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all flex items-center gap-3"
+            >
+              <Globe size={20} className="text-blue-600"/> Busca Federada
+            </button>
+            <button 
+              onClick={() => openDrawer('UploadDocumentDrawer')}
+              className="px-10 py-5 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3"
+            >
+              <UploadCloud size={20} /> Novo Upload
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">

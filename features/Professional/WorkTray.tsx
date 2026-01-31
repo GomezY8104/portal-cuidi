@@ -1,152 +1,208 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { 
-  Plus, Search, Activity, ChevronRight, X, ChevronDown, CheckSquare, Square
+  Plus, Search, Filter, ChevronRight, AlertCircle, 
+  FileText, ArrowUpRight, Calendar, Download, MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const MultiSelectDropdown = ({ 
-  label, 
-  options, 
-  selected, 
-  onToggle 
-}: { 
-  label: string, 
-  options: string[], 
-  selected: string[], 
-  onToggle: (val: string) => void 
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-[11px] font-bold uppercase tracking-wider ${
-          selected.length > 0 ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 shadow-sm'
-        }`}
-      >
-        {label} {selected.length > 0 && `(${selected.length})`}
-        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl z-30 p-2 animate-in fade-in zoom-in-95 duration-200">
-          {options.map(opt => (
-            <button
-              key={opt}
-              onClick={() => onToggle(opt)}
-              className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors group text-left"
-            >
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight group-hover:text-slate-900">{opt}</span>
-              {selected.includes(opt) ? <CheckSquare size={16} className="text-blue-600" /> : <Square size={16} className="text-slate-200" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import { useAppStore } from '../../store/useAppStore'; // Importando store
+import { downloadCSV } from '../../utils/downloadUtils';
 
 export const WorkTrayPage: React.FC = () => {
   const navigate = useNavigate();
+  const { apsQueue, openDrawer } = useAppStore(); // Consumindo a fila APS global
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRisks, setSelectedRisks] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterPriority, setFilterPriority] = useState('ALL');
 
-  const cases = [
-    { id: 'ENC-202', patient: 'MARIA APARECIDA DA SILVA', specialty: 'CARDIOLOGIA', status: 'PENDENTE', date: 'HOJE, 09:00', risk: 'AMARELO' },
-    { id: 'ENC-203', patient: 'JOÃO CARLOS PEREIRA', specialty: 'ORTOPEDIA', status: 'ENVIADO', date: 'ONTEM', risk: 'VERDE' },
-    { id: 'ENC-204', patient: 'ANA JULIA FONTES', specialty: 'NEUROLOGIA', status: 'QUALIFICADO', date: '12 OUT 2024', risk: 'VERMELHO' },
-  ];
+  // Utilizando apsQueue do store em vez de dados locais
+  const cases = apsQueue;
 
-  const handleToggleRisk = (val: string) => setSelectedRisks(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
-  const handleToggleStatus = (val: string) => setSelectedStatus(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
+  const getStatusStyle = (status: string) => {
+    switch(status) {
+      case 'PENDENTE': return 'bg-slate-100 text-slate-600 border-slate-200';
+      case 'EM_REGULACAO': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'DEVOLVIDO': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'QUALIFICADO': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 'FINALIZADO': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      default: return 'bg-slate-50 text-slate-500';
+    }
+  };
+
+  const getPriorityStyle = (p: string) => {
+    if (p === 'ALTA' || p === 'EMERGÊNCIA') return 'text-red-700 font-bold';
+    if (p === 'MÉDIA' || p === 'URGENTE') return 'text-amber-700 font-medium';
+    return 'text-blue-700';
+  };
+
+  const filteredCases = useMemo(() => {
+    return cases.filter(c => {
+      const matchSearch = c.patient.toLowerCase().includes(searchTerm.toLowerCase()) || c.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = filterStatus === 'ALL' || c.status === filterStatus;
+      const matchPriority = filterPriority === 'ALL' || c.priority === filterPriority;
+      return matchSearch && matchStatus && matchPriority;
+    });
+  }, [cases, searchTerm, filterStatus, filterPriority]);
+
+  const handleExport = () => {
+      downloadCSV('Fila_APS_Export.csv', filteredCases);
+  };
+
+  const handleOpenChat = (e: React.MouseEvent, item: any) => {
+    e.stopPropagation();
+    // Simulando mensagens se não existirem
+    const chatData = {
+        ...item,
+        messages: item.hasMessage ? [{ sender: 'REGULADOR', text: 'Por favor, anexe o exame de imagem complementar.', time: '10:30' }] : [],
+        initialTab: 'CHAT'
+    };
+    openDrawer('CaseSummaryDrawer', chatData);
+  };
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-2 border-b border-slate-100">
+    <div className="space-y-6 animate-in fade-in duration-300 font-sans text-slate-900">
+      
+      {/* HEADER & ACTIONS */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-sm border border-slate-200 shadow-sm">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">Fila de Encaminhamento APS</h1>
-          <p className="text-slate-400 text-[10px] font-bold mt-4 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Activity size={12} className="text-blue-500"/> Monitoramento Territorial • Nó: UBS Jardim das Flores
-          </p>
+          <h1 className="text-lg font-black text-slate-800 uppercase tracking-tight">Gestão de Encaminhamentos</h1>
+          <p className="text-xs text-slate-500 font-medium">Unidade: UBS JARDIM DAS FLORES (CNES 1234567)</p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div className="flex items-center gap-2">
-            <MultiSelectDropdown label="Urgência" options={['VERMELHO', 'AMARELO', 'VERDE']} selected={selectedRisks} onToggle={handleToggleRisk} />
-            <MultiSelectDropdown label="Fluxo" options={['PENDENTE', 'ENVIADO', 'QUALIFICADO']} selected={selectedStatus} onToggle={handleToggleStatus} />
-          </div>
-
-          <div className="relative flex-1 lg:w-[320px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-            <input 
-              placeholder="Pesquisar paciente..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-4 focus:ring-blue-50 transition-all shadow-sm"
-            />
-          </div>
-          <button 
-            onClick={() => navigate('/aps/new-case')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-xl hover:bg-blue-700 transition-all flex items-center gap-2"
-          >
-            <Plus size={16} strokeWidth={3} /> Novo Protocolo
-          </button>
+        <div className="flex gap-2">
+           <button 
+             onClick={handleExport}
+             className="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded-sm text-xs font-bold uppercase hover:bg-slate-50 flex items-center gap-2 transition-all"
+           >
+             <Download size={14}/> Exportar Lista
+           </button>
+           <button 
+             onClick={() => navigate('/aps/new-case')}
+             className="px-4 py-2 bg-blue-700 text-white rounded-sm text-xs font-bold uppercase hover:bg-blue-800 flex items-center gap-2 shadow-sm transition-all active:scale-95"
+           >
+             <Plus size={16}/> Novo Encaminhamento
+           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-prominent">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse table-fixed min-w-[1000px]">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[140px]">Protocolo</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[300px]">Paciente</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Especialidade</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center w-[120px]">Prioridade</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[150px]">Data</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-[140px]">Estado</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right w-[110px]">Ações</th>
+      {/* FILTERS BAR */}
+      <div className="bg-slate-100 p-3 rounded-sm border border-slate-200 flex flex-wrap gap-4 items-center">
+         <div className="flex items-center gap-2">
+            <Filter size={14} className="text-slate-500"/>
+            <span className="text-[10px] font-bold uppercase text-slate-500">Filtros:</span>
+         </div>
+         
+         <div className="relative">
+            <select 
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="pl-2 pr-8 py-1.5 bg-white border border-slate-300 rounded-sm text-xs font-medium text-slate-700 outline-none focus:border-blue-500 uppercase"
+            >
+               <option value="ALL">Todos os Status</option>
+               <option value="PENDENTE">Pendente</option>
+               <option value="DEVOLVIDO">Devolvido (Ação Req.)</option>
+               <option value="EM_REGULACAO">Em Regulação</option>
+               <option value="FINALIZADO">Finalizado</option>
+            </select>
+         </div>
+
+         <div className="relative">
+            <select 
+              value={filterPriority}
+              onChange={e => setFilterPriority(e.target.value)}
+              className="pl-2 pr-8 py-1.5 bg-white border border-slate-300 rounded-sm text-xs font-medium text-slate-700 outline-none focus:border-blue-500 uppercase"
+            >
+               <option value="ALL">Todas Prioridades</option>
+               <option value="ALTA">Alta</option>
+               <option value="MÉDIA">Média</option>
+               <option value="BAIXA">Baixa</option>
+            </select>
+         </div>
+
+         <div className="flex-1 max-w-md relative ml-auto">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={14}/>
+            <input 
+               value={searchTerm}
+               onChange={e => setSearchTerm(e.target.value)}
+               placeholder="BUSCAR POR NOME DO PACIENTE, CNS OU Nº PROTOCOLO..."
+               className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-sm text-xs font-bold outline-none focus:border-blue-500 uppercase placeholder:normal-case placeholder:font-normal"
+            />
+         </div>
+      </div>
+
+      {/* DATA TABLE */}
+      <div className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-sm">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-100 border-b border-slate-300">
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-32">Protocolo</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Paciente</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider">Especialidade</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-24">Prioridade</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-32">Criação</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-32">Estado</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-24">Chat</th>
+              <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-right w-24">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {filteredCases.map((c) => (
+              <tr key={c.id} className="hover:bg-blue-50/50 transition-colors group">
+                <td className="px-4 py-2 border-r border-slate-100">
+                   <span className="font-mono text-xs font-bold text-blue-700">{c.id}</span>
+                </td>
+                <td className="px-4 py-2 border-r border-slate-100">
+                   <p className="text-xs font-bold text-slate-900 uppercase truncate max-w-[250px]">{c.patient}</p>
+                </td>
+                <td className="px-4 py-2 border-r border-slate-100">
+                   <p className="text-xs font-medium text-slate-700 uppercase">{c.spec}</p>
+                </td>
+                <td className="px-4 py-2 border-r border-slate-100 text-center">
+                   <span className={`text-[10px] uppercase ${getPriorityStyle(c.priority)}`}>{c.priority}</span>
+                </td>
+                <td className="px-4 py-2 border-r border-slate-100">
+                   <span className="text-xs text-slate-600 font-mono">{c.date}</span>
+                </td>
+                <td className="px-4 py-2 border-r border-slate-100 text-center">
+                   <span className={`inline-block px-2 py-0.5 rounded-sm border text-[9px] font-black uppercase tracking-wide ${getStatusStyle(c.status)}`}>
+                      {c.status.replace('_', ' ')}
+                   </span>
+                </td>
+                
+                {/* COLUNA DE MENSAGEM */}
+                <td className="px-4 py-2 border-r border-slate-100 text-center">
+                   <button 
+                     onClick={(e) => handleOpenChat(e, c)}
+                     className="relative p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-blue-600 transition-colors"
+                     title="Falar com Regulador"
+                   >
+                      <MessageSquare size={16}/>
+                      {/* NOTIFICAÇÃO DE MENSAGEM */}
+                      {c.hasMessage && (
+                        <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                      )}
+                   </button>
+                </td>
+
+                <td className="px-4 py-2 text-right">
+                   <button 
+                     onClick={() => navigate(`/aps/case/${c.id}`)}
+                     className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-100 rounded transition-all"
+                     title="Abrir Protocolo"
+                   >
+                      <ArrowUpRight size={16}/>
+                   </button>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {cases.map((item) => (
-                <tr key={item.id} className="hover:bg-blue-50/20 transition-all group">
-                  <td className="px-8 py-6 font-mono font-bold text-blue-600 text-xs tracking-tight">#{item.id}</td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center font-bold text-[10px] text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">{item.patient.charAt(0)}</div>
-                      <span className="text-[12px] font-bold text-slate-900 uppercase tracking-tight leading-none">{item.patient}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 font-semibold text-[11px] text-slate-600 uppercase tracking-tight">{item.specialty}</td>
-                  <td className="px-8 py-6 text-center">
-                    <div className={`w-3 h-3 rounded-full mx-auto shadow-sm border-2 border-white ring-1 ring-slate-100 ${
-                      item.risk === 'VERMELHO' ? 'bg-red-600 animate-pulse' : item.risk === 'AMARELO' ? 'bg-yellow-400' : 'bg-green-500'
-                    }`}></div>
-                  </td>
-                  <td className="px-8 py-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.date}</td>
-                  <td className="px-8 py-6">
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[9px] font-bold uppercase border border-slate-200">{item.status}</span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <button onClick={() => navigate(`/aps/case/${item.id}`)} className="p-2.5 bg-slate-900 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-90"><ChevronRight size={16}/></button>
-                  </td>
+            ))}
+            {filteredCases.length === 0 && (
+                <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-400 italic text-xs uppercase font-bold">
+                        Nenhum encaminhamento encontrado.
+                    </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

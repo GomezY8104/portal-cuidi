@@ -1,0 +1,9 @@
+/* Main entry CSS for portal-cuidi */
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #f8fafc;
+  color: #222;
+}
+
+/* Add more global styles as needed */

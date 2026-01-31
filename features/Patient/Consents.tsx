@@ -1,124 +1,153 @@
 
 import React from 'react';
 import { 
-  Shield, CheckCircle2, XCircle, 
-  Search, Filter, Lock, Unlock, 
-  AlertCircle, ChevronRight, Info,
-  Plus, Settings2, Trash2, ShieldCheck,
-  User, Activity, FileText, Pill, History,
-  Image as ImageIcon, Video, Mic
+  ShieldCheck, Plus, Trash2, Edit, CheckCircle, XCircle, FileText, Check, X
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { useNavigate } from 'react-router-dom';
 
 export const PatientConsentsPage: React.FC = () => {
-  const openModal = useAppStore(s => s.openModal);
-  const navigate = useNavigate();
+  const { 
+    openModal, 
+    patientConsents, 
+    patientRequests, 
+    revokeConsent, 
+    approveRequest, 
+    denyRequest 
+  } = useAppStore();
 
-  const consents = [
-    { 
-      id: 'L-742',
-      institution: 'Hospital das Clínicas', 
-      type: 'PERSONALIZADO', 
-      status: 'Ativo', 
-      color: 'indigo',
-      permissions: { id: true, clinical: true, exams: true, prescriptions: false, images: true, videos: false, audio: false }
-    },
-    { 
-      id: 'L-129',
-      institution: 'UBS Jardim Norte', 
-      type: 'PLENO', 
-      status: 'Ativo', 
-      color: 'emerald',
-      permissions: { id: true, clinical: true, exams: true, prescriptions: true, images: false, videos: false, audio: false }
-    },
-  ];
+  const handleRevoke = (e: React.MouseEvent, id: string, name: string) => {
+      e.stopPropagation();
+      if(window.confirm(`Tem certeza que deseja revogar o acesso de "${name}"? A instituição perderá o acesso aos dados imediatamente.`)) {
+          revokeConsent(id);
+      }
+  };
+
+  const handleApprove = (e: React.MouseEvent, req: any) => {
+      e.stopPropagation();
+      approveRequest(req);
+  };
+
+  const handleDeny = (e: React.MouseEvent, id: string) => {
+      e.stopPropagation();
+      if(window.confirm('Deseja negar esta solicitação de acesso?')) {
+          denyRequest(id);
+      }
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest mb-2">
-            <ShieldCheck size={14} /> Governança Federada CUIDI
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Soberania de Dados</h1>
-          <p className="text-slate-500 mt-1 text-lg font-medium">Você decide quem acessa o quê. Revogue permissões a qualquer momento.</p>
-        </div>
-        <button 
-          onClick={() => openModal('NewConsentModal')}
-          className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
-        >
-           <Plus size={18} /> Nova Autorização
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {consents.map((c, i) => (
-          <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-prominent transition-all group relative overflow-hidden flex flex-col">
-            <div className={`absolute -right-4 -top-4 opacity-5 text-slate-900`}><Shield size={140} /></div>
-            
-            <div className="flex justify-between items-start mb-6">
-              <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${c.status === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                {c.status}
-              </span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => openModal('EditConsentModal', c)}
-                  className="p-2.5 bg-slate-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all text-slate-400 shadow-sm"
-                  title="Ajustar Configurações"
-                >
-                  <Settings2 size={18} />
-                </button>
-              </div>
-            </div>
-            
-            <h3 className="text-2xl font-black text-slate-900 mb-2 leading-tight">{c.institution}</h3>
-            
-            <div className="space-y-4 mb-8 flex-1 bg-slate-50/50 p-5 rounded-3xl border border-slate-100">
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Privilégios Ativos:</p>
-               <div className="flex flex-wrap gap-2">
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.id ? 'bg-white border-blue-200 text-blue-600' : 'opacity-20 grayscale'}`}><User size={12}/> <span className="text-[9px] font-bold">ID</span></div>
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.clinical ? 'bg-white border-indigo-200 text-indigo-600' : 'opacity-20 grayscale'}`}><Activity size={12}/> <span className="text-[9px] font-bold">CLIN</span></div>
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.exams ? 'bg-white border-emerald-200 text-emerald-600' : 'opacity-20 grayscale'}`}><FileText size={12}/> <span className="text-[9px] font-bold">EXAM</span></div>
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.images ? 'bg-white border-purple-200 text-purple-600' : 'opacity-20 grayscale'}`}><ImageIcon size={12}/> <span className="text-[9px] font-bold">IMAG</span></div>
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.videos ? 'bg-white border-rose-200 text-rose-600' : 'opacity-20 grayscale'}`}><Video size={12}/> <span className="text-[9px] font-bold">VID</span></div>
-                  <div className={`p-2 rounded-lg flex items-center gap-2 border ${c.permissions.audio ? 'bg-white border-cyan-200 text-cyan-600' : 'opacity-20 grayscale'}`}><Mic size={12}/> <span className="text-[9px] font-bold">AUD</span></div>
-               </div>
-            </div>
-            
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-100">
-              <button 
-                onClick={() => openModal('RevokeConsentModal', c)}
-                className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2"
-              >
-                Revogar Permissões <Trash2 size={14} />
-              </button>
-              <button 
-                onClick={() => navigate(`/ledger/${c.id}`)}
-                className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1 hover:text-indigo-600 transition-colors"
-              >
-                Ver Auditoria no Ledger <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-slate-900 p-12 rounded-[4rem] text-white flex flex-col md:flex-row items-center gap-10 shadow-2xl relative overflow-hidden">
-         <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12"><ShieldCheck size={300} /></div>
-         <div className="relative z-10 flex-1">
-           <h3 className="text-3xl font-black mb-4 leading-tight">Configurações Globais da Federação</h3>
-           <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-xl">
-             Defina regras automáticas para toda a rede federada. Escolha quais dados deseja compartilhar por padrão com qualquer novo nó institucional.
-           </p>
+    <div className="space-y-8 animate-fade-in-up pb-20 font-sans">
+      <div className="flex justify-between items-end border-b border-slate-200 pb-6">
+         <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Consentimentos (LGPD)</h1>
+            <p className="text-slate-500 text-xs font-medium mt-1">Gerencie quem acessa seus dados e por qual motivo.</p>
          </div>
          <button 
-           onClick={() => openModal('GlobalConsentRulesModal')}
-           className="relative z-10 px-10 py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3"
+            onClick={() => openModal('NewConsentModal')}
+            className="px-5 py-2.5 bg-slate-900 text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-800 flex items-center gap-2 shadow-sm active:scale-95"
          >
-           <Settings2 size={18} /> Configurar Regras Gerais
+            <Plus size={14}/> Novo Consentimento
          </button>
       </div>
+
+      {/* TABELA 1: CONSENTIMENTOS ATIVOS */}
+      <section className="space-y-4">
+         <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <CheckCircle size={16} className="text-emerald-600"/> Consentimentos Ativos ({patientConsents.length})
+         </h3>
+         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <tr>
+                     <th className="px-6 py-3">Instituição</th>
+                     <th className="px-6 py-3">Segmento</th>
+                     <th className="px-6 py-3">Dados Compartilhados</th>
+                     <th className="px-6 py-3">Finalidade</th>
+                     <th className="px-6 py-3">Vigência</th>
+                     <th className="px-6 py-3 text-right">Ação</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                  {patientConsents.map(c => (
+                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 font-bold text-slate-900">{c.inst}</td>
+                        <td className="px-6 py-3"><span className="bg-slate-100 px-2 py-0.5 rounded text-[9px] font-bold uppercase text-slate-500">{c.segment}</span></td>
+                        <td className="px-6 py-3 uppercase text-[10px]">{c.types}</td>
+                        <td className="px-6 py-3 uppercase text-[10px]">{c.purpose}</td>
+                        <td className="px-6 py-3 uppercase text-[10px]">{c.validity}</td>
+                        <td className="px-6 py-3 text-right">
+                           <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => openModal('EditConsentModal', c)} 
+                                className="text-blue-600 hover:underline font-bold uppercase text-[10px]"
+                              >
+                                Editar
+                              </button>
+                              <button 
+                                onClick={(e) => handleRevoke(e, c.id, c.inst)} 
+                                className="text-red-600 hover:underline font-bold uppercase text-[10px] flex items-center gap-1 cursor-pointer"
+                              >
+                                <Trash2 size={12} /> Revogar
+                              </button>
+                           </div>
+                        </td>
+                     </tr>
+                  ))}
+                  {patientConsents.length === 0 && (
+                      <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400 italic">Nenhum consentimento ativo no momento.</td></tr>
+                  )}
+               </tbody>
+            </table>
+         </div>
+      </section>
+
+      {/* TABELA 2: SOLICITAÇÕES */}
+      <section className="space-y-4">
+         <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <FileText size={16} className="text-amber-600"/> Solicitações de Acesso ({patientRequests.length})
+         </h3>
+         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <tr>
+                     <th className="px-6 py-3">Instituição</th>
+                     <th className="px-6 py-3">Dados Solicitados</th>
+                     <th className="px-6 py-3">Finalidade</th>
+                     <th className="px-6 py-3 text-center">Status</th>
+                     <th className="px-6 py-3 text-right">Ação</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+                  {patientRequests.map(r => (
+                     <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 font-bold text-slate-900">{r.inst}</td>
+                        <td className="px-6 py-3">{r.data}</td>
+                        <td className="px-6 py-3 uppercase text-[10px]">{r.purpose}</td>
+                        <td className="px-6 py-3 text-center"><span className="text-amber-600 font-bold text-[10px] uppercase bg-amber-50 px-2 py-0.5 rounded border border-amber-100">{r.status}</span></td>
+                        <td className="px-6 py-3 text-right">
+                           <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={(e) => handleApprove(e, r)}
+                                className="bg-emerald-600 text-white px-3 py-1.5 rounded text-[9px] font-black uppercase hover:bg-emerald-700 flex items-center gap-1 shadow-sm active:scale-95 transition-all"
+                              >
+                                <Check size={10} strokeWidth={4}/> Aprovar
+                              </button>
+                              <button 
+                                onClick={(e) => handleDeny(e, r.id)}
+                                className="bg-white border border-slate-200 text-slate-500 px-3 py-1.5 rounded text-[9px] font-black uppercase hover:bg-red-50 hover:text-red-600 hover:border-red-200 flex items-center gap-1 transition-all active:scale-95"
+                              >
+                                <X size={10} strokeWidth={4}/> Negar
+                              </button>
+                           </div>
+                        </td>
+                     </tr>
+                  ))}
+                  {patientRequests.length === 0 && (
+                      <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">Nenhuma solicitação pendente.</td></tr>
+                  )}
+               </tbody>
+            </table>
+         </div>
+      </section>
     </div>
   );
 };

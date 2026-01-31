@@ -6,17 +6,46 @@ import {
   RefreshCw, Trash2, Send, Filter,
   ExternalLink, UserPlus
 } from 'lucide-react';
+import { useAppStore } from '../../store/useAppStore';
 
 /**
  * P15: Gestão de Convites (/node-admin/invites)
  * Administra tokens de convite enviados para novos profissionais da unidade.
  */
 export const InvitesManagementPage: React.FC = () => {
-  const [invites] = useState([
-    { id: 'inv-01', email: 'medico.novo@saude.gov.br', role: 'REGULATOR', status: 'PENDING', sentAt: '2024-10-14T10:00:00Z' },
-    { id: 'inv-02', email: 'enf.carol@ubs.br', role: 'APS', status: 'ACCEPTED', sentAt: '2024-10-12T08:30:00Z' },
-    { id: 'inv-03', email: 'dr.pedro@upa.br', role: 'UPA', status: 'EXPIRED', sentAt: '2024-10-01T15:45:00Z' },
-  ]);
+  const { user: currentUser } = useAppStore();
+  const nodeType = currentUser?.nodeName?.toUpperCase() || 'UNIDADE';
+
+  // Gerador de Convites Mockados Contextuais
+  const getContextInvites = () => {
+    let list = [];
+    if (nodeType.includes('HOSPITAL')) {
+       list = [
+         { id: 'inv-01', email: 'dr.novo.cardiologia@gmail.com', role: 'PROVIDER', status: 'PENDING', sentAt: '2024-10-25T10:00:00Z' },
+         { id: 'inv-02', email: 'enf.uti.silva@hotmail.com', role: 'PROVIDER', status: 'ACCEPTED', sentAt: '2024-10-20T08:30:00Z' },
+         { id: 'inv-03', email: 'auditoria.externa@consultoria.com', role: 'AUDITOR', status: 'EXPIRED', sentAt: '2024-10-01T15:45:00Z' },
+       ];
+    } else if (nodeType.includes('UBS') || nodeType.includes('APS')) {
+       list = [
+         { id: 'inv-01', email: 'acs.novo.bairro@gmail.com', role: 'APS', status: 'PENDING', sentAt: '2024-10-26T09:00:00Z' },
+         { id: 'inv-02', email: 'enf.familia.costa@saude.gov', role: 'APS', status: 'ACCEPTED', sentAt: '2024-10-22T14:20:00Z' }
+       ];
+    } else if (nodeType.includes('UPA')) {
+       list = [
+         { id: 'inv-01', email: 'plantonista.pediatra@gmail.com', role: 'UPA', status: 'PENDING', sentAt: '2024-10-26T18:00:00Z' },
+         { id: 'inv-02', email: 'tec.raiox.souza@gmail.com', role: 'UPA', status: 'PENDING', sentAt: '2024-10-25T11:00:00Z' },
+         { id: 'inv-03', email: 'enf.triagem.noite@yahoo.com', role: 'UPA', status: 'ACCEPTED', sentAt: '2024-10-24T20:00:00Z' }
+       ];
+    } else {
+       // Fallback
+       list = [
+         { id: 'inv-01', email: 'novo.usuario@email.com', role: 'PROVIDER', status: 'PENDING', sentAt: '2024-10-26T10:00:00Z' }
+       ];
+    }
+    return list;
+  };
+
+  const [invites] = useState(getContextInvites());
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -35,9 +64,9 @@ export const InvitesManagementPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Convites Pendentes', value: '12', icon: <Clock className="text-amber-500" /> },
-          { label: 'Aceites (30d)', value: '45', icon: <CheckCircle className="text-green-500" /> },
-          { label: 'Expirados', value: '08', icon: <XCircle className="text-red-500" /> },
+          { label: 'Convites Pendentes', value: invites.filter(i => i.status === 'PENDING').length, icon: <Clock className="text-amber-500" /> },
+          { label: 'Aceites (30d)', value: invites.filter(i => i.status === 'ACCEPTED').length, icon: <CheckCircle className="text-green-500" /> },
+          { label: 'Expirados', value: invites.filter(i => i.status === 'EXPIRED').length, icon: <XCircle className="text-red-500" /> },
         ].map((s, i) => (
           <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
@@ -113,6 +142,9 @@ export const InvitesManagementPage: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              {invites.length === 0 && (
+                 <tr><td colSpan={5} className="px-8 py-10 text-center text-slate-400 italic text-xs uppercase font-bold">Nenhum convite encontrado.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

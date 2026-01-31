@@ -2,11 +2,16 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { FileText, Shield, Globe, Clock, Download, X, ListChecks, Database } from 'lucide-react';
+import { downloadJSON } from '../../utils/downloadUtils';
 
 export const DocumentMetadataDrawer: React.FC = () => {
   const { drawerData, closeDrawer } = useAppStore();
 
   if (!drawerData) return null;
+
+  const handleDownloadCopy = () => {
+      downloadJSON(`Metadados_${drawerData.node || 'DOC'}.json`, drawerData);
+  };
 
   return (
     <div className="p-10 flex flex-col h-full bg-white space-y-10 uppercase">
@@ -48,8 +53,11 @@ export const DocumentMetadataDrawer: React.FC = () => {
       </div>
 
       <div className="pt-10 border-t border-slate-100">
-         <button className="w-full py-4 bg-slate-900 text-white rounded font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-blue-600 transition-all active:scale-95">
-           <Download size={16}/> Solicitar Cópia Técnica
+         <button 
+            onClick={handleDownloadCopy}
+            className="w-full py-4 bg-slate-900 text-white rounded font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-blue-600 transition-all active:scale-95"
+         >
+           <Download size={16}/> Solicitar Cópia Técnica (JSON)
          </button>
       </div>
     </div>

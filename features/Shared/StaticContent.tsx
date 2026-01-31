@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Shield, Globe, Database, Book, Terminal, 
@@ -29,13 +28,25 @@ const PageHeader = ({ title, subtitle, icon: Icon }: any) => {
 
 export const AboutPage: React.FC = () => (
   <div className="max-w-4xl mx-auto py-10 animate-fade-in-up">
-    <PageHeader title="Sobre o CUIDI" subtitle="A revolução na regulação assistencial federada." icon={Globe} />
+    <PageHeader title="Sobre o CUIDI" subtitle="Integração Digital de Informações em Processos de Saúde" icon={Globe} />
     <div className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-sm prose prose-slate max-w-none">
       <p className="text-xl leading-relaxed text-slate-600">
-        O <strong>Portal CUIDI</strong> nasceu da necessidade de unificar o sistema de regulação do SUS, garantindo que o dado clínico acompanhe o cidadão em qualquer lugar do Brasil, respeitando integralmente a <strong>LGPD</strong>.
+        O <strong>CUIDI</strong> é um projeto dedicado à integração digital de informações em processos de saúde, estruturado como espaço de dados federativo, com governança, interoperabilidade e sustentabilidade. A solução adota padrões internacionais de data spaces, promovendo a soberania dos dados, a conformidade regulatória e a eficiência na gestão clínica e administrativa.
       </p>
-      <h2 className="text-2xl font-black text-slate-900 mt-10">Nossa Missão</h2>
-      <p className="text-slate-600">Eliminar barreiras de interoperabilidade entre estados e municípios através de uma arquitetura de nós federados e governança ativa.</p>
+      <h2 className="text-2xl font-black text-slate-900 mt-10">Missão</h2>
+      <p className="text-slate-600">Promover a integração segura e eficiente de dados de saúde, respeitando a privacidade, a governança federada e a sustentabilidade institucional.</p>
+      <h2 className="text-2xl font-black text-slate-900 mt-10">Visão</h2>
+      <p className="text-slate-600">Ser referência em soluções de integração de dados em saúde, alinhando inovação tecnológica, sustentabilidade e conformidade com padrões internacionais.</p>
+      <h2 className="text-2xl font-black text-slate-900 mt-10">Diferenciais</h2>
+      <ul>
+        <li>• Integração federada de dados clínicos e administrativos.</li>
+        <li>• Governança baseada em políticas institucionais e consentimento do paciente.</li>
+        <li>• Sustentabilidade e escalabilidade por arquitetura modular e cloud.</li>
+        <li>• Conformidade com LGPD e padrões internacionais de data spaces.</li>
+        <li>• Orquestração inteligente e rastreabilidade de todas as operações.</li>
+      </ul>
+      <h2 className="text-2xl font-black text-slate-900 mt-10">Contexto</h2>
+      <p className="text-slate-600">O CUIDI responde a desafios reais de interoperabilidade, redundância e fragmentação de dados em saúde, promovendo um ecossistema federado, sustentável e orientado à governança de dados.</p>
     </div>
   </div>
 );
@@ -106,23 +117,25 @@ export const NetworkStatusPage: React.FC = () => (
 export const LegalPage: React.FC<{ type: 'terms' | 'privacy' }> = ({ type }) => (
   <div className="max-w-4xl mx-auto py-10 animate-fade-in-up">
     <PageHeader 
-      title={type === 'terms' ? 'Termos de Uso' : 'Privacidade'} 
-      subtitle={type === 'terms' ? 'Regras da federação assistencial.' : 'Como protegemos a soberania do cidadão.'} 
+      title={type === 'terms' ? 'Termos de Uso' : 'Política de Privacidade'} 
+      subtitle={type === 'terms' ? 'Regras da governança federada.' : 'Como protegemos a soberania e sustentabilidade dos dados.'} 
       icon={type === 'terms' ? FileText : Lock} 
     />
     <div className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-sm space-y-6 text-slate-600 leading-relaxed font-medium">
-      <p>Este documento estabelece as diretrizes para uso da plataforma CUIDI no âmbito do Sistema Único de Saúde.</p>
+      <p>Este documento estabelece as diretrizes para uso da plataforma CUIDI no âmbito do Sistema Federado de Saúde.</p>
       <h3 className="text-xl font-bold text-slate-900 mt-8">1. Uso de Dados Assistenciais</h3>
-      <p>O acesso a dados clínicos é permitido exclusivamente para finalidade de tratamento e cuidado assistencial, sob pena de sanções administrativas e penais.</p>
+      <p>O acesso a dados clínicos é permitido exclusivamente para finalidade de tratamento e cuidado assistencial, sob pena de sanções administrativas e penais, respeitando a governança federada.</p>
       <h3 className="text-xl font-bold text-slate-900 mt-8">2. Transparência ao Titular</h3>
-      <p>O cidadão possui o direito de revogar qualquer consentimento a qualquer momento através do Portal do Cidadão.</p>
+      <p>O cidadão possui o direito de revogar qualquer consentimento a qualquer momento através da plataforma, com total rastreabilidade e auditoria.</p>
+      <h3 className="text-xl font-bold text-slate-900 mt-8">3. Sustentabilidade e Conformidade</h3>
+      <p>A CUIDI adota práticas de sustentabilidade institucional e conformidade com padrões internacionais de proteção de dados.</p>
     </div>
   </div>
 );
 
 export const ContactPage: React.FC = () => (
   <div className="max-w-4xl mx-auto py-10 animate-fade-in-up">
-    <PageHeader title="Contato & Suporte" subtitle="Estamos prontos para atender gestores e cidadãos." icon={MessageSquare} />
+    <PageHeader title="Contato & Suporte" subtitle="Governança Federada e Suporte Institucional" icon={MessageSquare} />
     <div className="grid md:grid-cols-2 gap-8">
       <div className="bg-blue-600 p-10 rounded-[3rem] text-white space-y-8">
         <h3 className="text-2xl font-black">Canais Oficiais</h3>
@@ -130,14 +143,14 @@ export const ContactPage: React.FC = () => (
           <div className="flex gap-4">
             <Mail className="text-blue-200"/>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">E-mail Suporte</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">E-mail Institucional</p>
               <p className="font-bold">suporte@cuidi.saude.gov.br</p>
             </div>
           </div>
           <div className="flex gap-4">
             <MessageSquare className="text-blue-200"/>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Ouvidoria</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Governança Federada</p>
               <p className="font-bold">0800 123 4567</p>
             </div>
           </div>

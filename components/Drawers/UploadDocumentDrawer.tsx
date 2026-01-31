@@ -4,14 +4,22 @@ import { useAppStore } from '../../store/useAppStore';
 import { 
   UploadCloud, X, FileText, CheckCircle, 
   Loader2, AlertCircle, Trash2, ArrowRight,
-  ShieldCheck, Info
+  ShieldCheck, Info, MapPin
 } from 'lucide-react';
 
 export const UploadDocumentDrawer: React.FC = () => {
   const { drawerData, closeDrawer } = useAppStore();
   const [file, setFile] = useState<File | null>(null);
+  const [targetNode, setTargetNode] = useState('CENTRAL');
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const nodes = [
+      { id: 'CENTRAL', label: 'Repositório Central (Padrão)' },
+      { id: 'HOSP_SP', label: 'Hospital das Clínicas SP' },
+      { id: 'UBS_NORTE', label: 'UBS Jardim Norte' },
+      { id: 'UPA_SUL', label: 'UPA Zona Sul' }
+  ];
 
   const handleUpload = () => {
     setUploading(true);
@@ -41,6 +49,21 @@ export const UploadDocumentDrawer: React.FC = () => {
 
       {!success ? (
         <div className="flex-1 flex flex-col space-y-8">
+          
+          {/* Target Node Select */}
+          <div className="space-y-2">
+             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                <MapPin size={12}/> Nó de Destino (Custódia)
+             </label>
+             <select 
+                value={targetNode}
+                onChange={(e) => setTargetNode(e.target.value)}
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 appearance-none"
+             >
+                {nodes.map(n => <option key={n.id} value={n.id}>{n.label}</option>)}
+             </select>
+          </div>
+
           <div 
             className={`border-4 border-dashed rounded-[3rem] flex-1 flex flex-col items-center justify-center p-10 transition-all cursor-pointer ${file ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}
             onClick={() => document.getElementById('fileInput')?.click()}

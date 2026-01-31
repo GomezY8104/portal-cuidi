@@ -5,8 +5,20 @@ import {
   ArrowRight, Search, Filter, ShieldCheck,
   Download, Activity, History
 } from 'lucide-react';
+import { downloadCSV } from '../../utils/downloadUtils';
 
 export const PatientAccessLogPage: React.FC = () => {
+  const logs = [
+    { actor: 'Dr. Ricardo M.', hospital: 'Hospital Regional Sul', purpose: 'Tratamento de Urgência', data: 'Dados Clínicos (Episódio)', time: 'Hoje, 14:32', type: 'UPA' },
+    { actor: 'Enf. Joana D.', hospital: 'UBS Jardim das Flores', purpose: 'Consulta de Rotina', data: 'Histórico Completo', time: '12 Out 2024, 09:15', type: 'UBS' },
+    { actor: 'Sistema (Audit)', hospital: 'Federação CUIDI', purpose: 'Auditoria de Integridade', data: 'Metadados Técnicos', time: '10 Out 2024, 23:00', type: 'GLOBAL' },
+    { actor: 'Dr. Paulo S.', hospital: 'Hospital das Clínicas', purpose: 'Avaliação de Especialidade', data: 'Exames de Imagem', time: '05 Out 2024, 16:40', type: 'HOSPITAL' },
+  ];
+
+  const handleExport = () => {
+      downloadCSV('Meus_Logs_Acesso_SUS.csv', logs);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -17,7 +29,10 @@ export const PatientAccessLogPage: React.FC = () => {
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Meus Logs de Acesso</h1>
           <p className="text-slate-500 mt-1 text-lg">Saiba exatamente quem viu seus dados, onde e por qual motivo.</p>
         </div>
-        <button className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
+        <button 
+          onClick={handleExport}
+          className="px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
+        >
            <Download size={18} /> Exportar Ledger
         </button>
       </div>
@@ -36,12 +51,7 @@ export const PatientAccessLogPage: React.FC = () => {
         </div>
 
         <div className="divide-y divide-slate-50">
-          {[
-            { actor: 'Dr. Ricardo M.', hospital: 'Hospital Regional Sul', purpose: 'Tratamento de Urgência', data: 'Dados Clínicos (Episódio)', time: 'Hoje, 14:32', type: 'UPA' },
-            { actor: 'Enf. Joana D.', hospital: 'UBS Jardim das Flores', purpose: 'Consulta de Rotina', data: 'Histórico Completo', time: '12 Out 2024, 09:15', type: 'UBS' },
-            { actor: 'Sistema (Audit)', hospital: 'Federação CUIDI', purpose: 'Auditoria de Integridade', data: 'Metadados Técnicos', time: '10 Out 2024, 23:00', type: 'GLOBAL' },
-            { actor: 'Dr. Paulo S.', hospital: 'Hospital das Clínicas', purpose: 'Avaliação de Especialidade', data: 'Exames de Imagem', time: '05 Out 2024, 16:40', type: 'HOSPITAL' },
-          ].map((log, i) => (
+          {logs.map((log, i) => (
             <div key={i} className="p-8 px-10 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">

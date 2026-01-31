@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { 
@@ -16,12 +17,20 @@ export const CaseSummaryDrawer: React.FC = () => {
 
   const isScheduled = drawerData?.status === 'AGENDADO' && drawerData?.appointment;
 
+  // Lógica para título dinâmico do Chat
+  const getChatTitle = () => {
+      if (drawerData?.chatTarget === 'ORIGIN') return 'Fale com a Unidade Solicitante (APS/UPA)';
+      if (drawerData?.chatTarget === 'PROVIDER') return 'Fale com o Prestador';
+      // Fallback genérico se não especificado (ex: visão do paciente)
+      return 'Fale com a Regulação';
+  };
+
   // Cargar historial si existe en los datos
   useEffect(() => {
     if (drawerData?.messages) {
       setChatHistory(drawerData.messages);
     }
-    // Si viene la prop initialTab, forzar el cambio (útil si el drawer ya estaba abierto pero con otros datos)
+    // Si viene la prop initialTab, forzar el cambio
     if (drawerData?.initialTab) {
         setActiveTab(drawerData.initialTab);
     }
@@ -29,7 +38,7 @@ export const CaseSummaryDrawer: React.FC = () => {
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
-    const newMsg = { sender: 'PACIENTE', text: message, time: 'Agora' };
+    const newMsg = { sender: 'VOCÊ', text: message, time: 'Agora' };
     setChatHistory([...chatHistory, newMsg]);
     setMessage('');
   };
@@ -67,7 +76,7 @@ export const CaseSummaryDrawer: React.FC = () => {
           onClick={() => setActiveTab('CHAT')}
           className={`flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-colors ${activeTab === 'CHAT' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-500 hover:bg-slate-50'}`}
         >
-          Fale com a Regulação
+          {getChatTitle()}
           {chatHistory.length > 0 && <span className="ml-2 bg-red-500 text-white text-[8px] px-1.5 rounded-full">{chatHistory.length}</span>}
         </button>
       </div>
@@ -78,54 +87,18 @@ export const CaseSummaryDrawer: React.FC = () => {
         {activeTab === 'RESUMO' && (
           <div className="p-6 space-y-8 animate-in fade-in slide-in-from-left-4 duration-300">
              
-             {/* TARJETA DE AGENDAMIENTO (Si aplica) */}
-             {isScheduled && (
-               <div className="bg-white rounded-2xl border border-emerald-100 shadow-xl shadow-emerald-50 overflow-hidden">
-                  <div className="bg-emerald-600 p-4 text-white flex justify-between items-center">
-                     <span className="text-xs font-black uppercase tracking-widest flex items-center gap-2"><CheckCircle size={14}/> Vaga Confirmada</span>
-                     <span className="text-[10px] font-medium bg-emerald-700 px-2 py-0.5 rounded">Comparecer</span>
-                  </div>
-                  <div className="p-6 space-y-6">
-                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
-                           <Calendar size={24}/>
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data e Hora</p>
-                           <p className="text-xl font-black text-slate-900">{drawerData.appointment.date} às {drawerData.appointment.time}</p>
-                        </div>
-                     </div>
-                     
-                     <div className="grid grid-cols-1 gap-4 pt-4 border-t border-slate-50">
-                        <div>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Local / Prestador</p>
-                           <p className="text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 size={14} className="text-slate-400"/> {drawerData.appointment.unit}</p>
-                           <p className="text-xs text-slate-500 mt-1 ml-6">{drawerData.appointment.address}</p>
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Profissional</p>
-                           <p className="text-sm font-bold text-slate-800 flex items-center gap-2"><User size={14} className="text-slate-400"/> {drawerData.appointment.doctor}</p>
-                        </div>
-                     </div>
-
-                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Instruções de Preparo</p>
-                        <p className="text-xs font-medium text-slate-600">{drawerData.appointment.instructions}</p>
-                     </div>
-                  </div>
-               </div>
-             )}
-
-             {/* Datos Principales del Proceso */}
+             {/* Dados Principais do Proceso */}
              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-start">
                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Procedimento</p>
-                      <p className="text-sm font-bold text-slate-900">{drawerData.title}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Procedimento / Motivo</p>
+                      <p className="text-sm font-bold text-slate-900">{drawerData.title || drawerData.subtitle || 'Regulação Geral'}</p>
                    </div>
                    <div className="text-right">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Especialidade</p>
-                      <p className="text-xs font-bold text-blue-600">{drawerData.subtitle}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600`}>
+                         {drawerData.status}
+                      </span>
                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
@@ -143,6 +116,32 @@ export const CaseSummaryDrawer: React.FC = () => {
                    </div>
                 </div>
              </div>
+
+             {/* Informações do Paciente (Se disponíveis no contexto) */}
+             {(drawerData.patientName || drawerData.patient) && (
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest px-1">Dados do Paciente</h3>
+                   <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs">
+                         {(drawerData.patientName || drawerData.patient || 'P').charAt(0)}
+                      </div>
+                      <div>
+                         <p className="text-xs font-bold text-slate-800 uppercase">{drawerData.patientName || drawerData.patient}</p>
+                         <p className="text-[10px] text-slate-500 font-mono">{drawerData.patientCpf || drawerData.cpf || 'CPF Oculto'}</p>
+                      </div>
+                   </div>
+                </div>
+             )}
+
+             {/* Descrição Clínica (Se disponível) */}
+             {(drawerData.description || drawerData.clinicalNote) && (
+                <div className="space-y-2">
+                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest px-1">Resumo Clínico</h3>
+                   <div className="bg-white p-4 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed font-medium italic shadow-sm">
+                      "{drawerData.description || drawerData.clinicalNote}"
+                   </div>
+                </div>
+             )}
 
              {/* Timeline Visual (Si existe) */}
              {drawerData.timeline && drawerData.timeline.length > 0 && (
@@ -174,9 +173,9 @@ export const CaseSummaryDrawer: React.FC = () => {
           <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
              <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center mb-6">
-                   <p className="text-[10px] font-bold text-blue-800 uppercase tracking-widest mb-1">Canal Oficial de Regulação</p>
+                   <p className="text-[10px] font-bold text-blue-800 uppercase tracking-widest mb-1">Canal Oficial</p>
                    <p className="text-xs text-blue-600 leading-relaxed">
-                      Utilize este espaço para responder dúvidas, enviar justificativas ou interagir com a equipe de regulação sobre este caso específico.
+                      Este canal registra todas as interações no Ledger para fins de auditoria.
                    </p>
                 </div>
 
@@ -187,8 +186,8 @@ export const CaseSummaryDrawer: React.FC = () => {
                    </div>
                 )}
                 {chatHistory.map((msg: any, idx: number) => (
-                   <div key={idx} className={`flex flex-col ${msg.sender === 'PACIENTE' ? 'items-end' : 'items-start'}`}>
-                      <div className={`max-w-[85%] p-3 rounded-2xl text-xs font-medium shadow-sm leading-relaxed ${msg.sender === 'PACIENTE' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'}`}>
+                   <div key={idx} className={`flex flex-col ${msg.sender === 'VOCÊ' || msg.sender === 'PACIENTE' ? 'items-end' : 'items-start'}`}>
+                      <div className={`max-w-[85%] p-3 rounded-2xl text-xs font-medium shadow-sm leading-relaxed ${msg.sender === 'VOCÊ' || msg.sender === 'PACIENTE' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'}`}>
                          {msg.text}
                       </div>
                       <span className="text-[9px] font-bold text-slate-400 mt-1 px-1 uppercase">{msg.sender === 'PACIENTE' ? 'Você' : msg.sender} • {msg.time}</span>

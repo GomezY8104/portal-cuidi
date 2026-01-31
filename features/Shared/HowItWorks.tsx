@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CuidiLogo } from '../../components/ui/CuidiLogo';
 import { 
   HelpCircle, ArrowRight, Menu, User, FileText, Lock, ShieldCheck, 
-  Heart, Calendar, Bell, Search, CheckCircle, Eye, Clock, ChevronLeft, ChevronRight
+  Heart, Calendar, Bell, Search, CheckCircle, Eye, Clock, ChevronLeft, ChevronRight, Layers, Server
 } from 'lucide-react';
 
 interface Slide {
@@ -17,7 +17,7 @@ const patientSlides: Slide[] = [
   {
     icon: <User className="text-blue-600" size={64} />,
     title: "Seu portal pessoal de saúde",
-    description: "Acesse todo seu histórico clínico em um só lugar, com total controle e privacidade.",
+    description: "Acesse seu histórico clínico, controle consentimentos e acompanhe acessos, com privacidade e transparência.",
     features: [
       "Histórico completo de consultas e procedimentos",
       "Exames e resultados de laboratório",
@@ -28,7 +28,7 @@ const patientSlides: Slide[] = [
   {
     icon: <Lock className="text-emerald-600" size={64} />,
     title: "Você controla seus dados",
-    description: "Gerencie quem pode acessar suas informações de saúde com consentimentos LGPD.",
+    description: "Gerencie quem pode acessar suas informações de saúde conforme a LGPD. Defina finalidades, prazos e revogue consentimentos a qualquer momento.",
     features: [
       "Criar e revogar consentimentos a qualquer momento",
       "Definir finalidade e prazo de validade",
@@ -39,7 +39,7 @@ const patientSlides: Slide[] = [
   {
     icon: <Eye className="text-indigo-600" size={64} />,
     title: "Rastreie cada acesso",
-    description: "Saiba exatamente quem acessou seus dados, quando e para qual finalidade.",
+    description: "Visualize todos os acessos realizados aos seus dados, com registro detalhado e auditoria permanente.",
     features: [
       "Registro completo de todos os acessos",
       "Notificações em tempo real",
@@ -50,7 +50,7 @@ const patientSlides: Slide[] = [
   {
     icon: <Heart className="text-rose-600" size={64} />,
     title: "Perfil de emergência",
-    description: "Informações críticas sempre disponíveis para atendimento de urgência.",
+    description: "Informações essenciais disponíveis para atendimento de urgência, respeitando privacidade e governança.",
     features: [
       "Alergias e condições médicas importantes",
       "Contatos de emergência",
@@ -64,7 +64,7 @@ const professionalSlides: Slide[] = [
   {
     icon: <Search className="text-blue-600" size={64} />,
     title: "Busca federada de documentos",
-    description: "Localize informações clínicas em toda a rede SUS, respeitando governança.",
+    description: "Localize informações clínicas em toda a rede federada, respeitando políticas institucionais e consentimentos.",
     features: [
       "Pesquisa por CPF em nós federados",
       "Visualização de metadados sem consentimento",
@@ -75,7 +75,7 @@ const professionalSlides: Slide[] = [
   {
     icon: <FileText className="text-emerald-600" size={64} />,
     title: "Solicite documentos ao paciente",
-    description: "Peça acesso a exames e documentos específicos de forma transparente.",
+    description: "Solicite acesso a exames e documentos de forma transparente, com registro e aprovação do paciente.",
     features: [
       "Solicitação formal com justificativa",
       "Paciente recebe notificação e decide",
@@ -86,7 +86,7 @@ const professionalSlides: Slide[] = [
   {
     icon: <ShieldCheck className="text-indigo-600" size={64} />,
     title: "Políticas e governança",
-    description: "Cada acesso é validado por políticas RBAC e consentimentos LGPD.",
+    description: "Cada acesso é validado por políticas institucionais e consentimentos, garantindo conformidade e rastreabilidade.",
     features: [
       "Controle por papel e organização",
       "Finalidade clínica obrigatória",
@@ -97,13 +97,37 @@ const professionalSlides: Slide[] = [
   {
     icon: <Clock className="text-rose-600" size={64} />,
     title: "Continuidade assistencial",
-    description: "Acesse o histórico necessário para oferecer o melhor cuidado ao paciente.",
+    description: "Acesse o histórico necessário para apoiar o cuidado ao paciente, com visão longitudinal e integração federada.",
     features: [
       "Visão longitudinal do cuidado",
       "Timeline de eventos clínicos",
       "Integração com telemedicina",
       "Suporte a regulação e encaminhamentos"
     ]
+  }
+];
+
+// Novo workflow para o usuário
+const workflowCards = [
+  {
+    icon: <ShieldCheck className="text-blue-600" size={48} />,
+    title: 'Governança Federada',
+    desc: 'Acesso e compartilhamento de dados são regidos por políticas institucionais e consentimentos, garantindo soberania e rastreabilidade.'
+  },
+  {
+    icon: <Layers className="text-emerald-600" size={48} />,
+    title: 'Integração Sustentável',
+    desc: 'A arquitetura modular permite integração progressiva, respeitando a sustentabilidade institucional e a evolução tecnológica.'
+  },
+  {
+    icon: <Server className="text-indigo-600" size={48} />,
+    title: 'Espaço de Dados Federado',
+    desc: 'Os dados permanecem sob controle das instituições, com interoperabilidade e conformidade regulatória em todo o ecossistema.'
+  },
+  {
+    icon: <CheckCircle className="text-blue-600" size={48} />,
+    title: 'Transparência e Auditoria',
+    desc: 'Todas as operações são auditáveis, promovendo confiança, segurança e conformidade com a legislação vigente.'
   }
 ];
 
@@ -148,7 +172,12 @@ export const HowItWorksPage: React.FC = () => {
           </button>
         </div>
       </nav>
-
+      {/* Botão Voltar */}
+      <div className="max-w-7xl mx-auto px-6 pt-36 pb-0">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-[10px] uppercase tracking-widest transition-colors mb-8">
+          <ChevronLeft size={16} /> Voltar
+        </button>
+      </div>
       {/* Hero */}
       <header className="pt-48 pb-16 px-6 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-blue-50 -skew-x-12 origin-top -z-10 translate-x-20"></div>
@@ -157,10 +186,10 @@ export const HowItWorksPage: React.FC = () => {
             <HelpCircle size={14} /> Tour Interativo
           </div>
           <h1 className="text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1]">
-            Conheça o Portal CUIDI
+            Conheça o CUIDI
           </h1>
           <p className="text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto">
-            Descubra como o portal funciona para você. Escolha seu perfil e explore os recursos.
+            Descubra como a integração digital de dados em saúde pode apoiar decisões clínicas, gestão e segurança da informação. Escolha seu perfil e explore os recursos.
           </p>
 
           {/* Role Selector */}
@@ -175,7 +204,7 @@ export const HowItWorksPage: React.FC = () => {
               onClick={() => setRole('professional')} 
               className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${role === 'professional' ? 'bg-white shadow-lg text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              Sou Profissional
+              Sou Profissional de Saúde
             </button>
           </div>
         </div>
@@ -268,7 +297,7 @@ export const HowItWorksPage: React.FC = () => {
             <p className="text-blue-100 max-w-xl mx-auto">
               {role === 'patient' 
                 ? 'Crie sua conta e tenha acesso completo ao seu histórico de saúde.' 
-                : 'Acesse o portal e melhore o cuidado aos seus pacientes.'}
+                : 'Acesse a plataforma e otimize a gestão e o cuidado aos pacientes.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <button 
@@ -290,12 +319,8 @@ export const HowItWorksPage: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-10 flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-widest">
-          <p>© 2026 Portal CUIDI - Governança Federada</p>
-          <div className="flex gap-8">
-            <span className="text-slate-500">BRASIL</span>
-            <span className="text-slate-500">SUS</span>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 py-10 flex items-center justify-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+          <p>© 2026 CUIDI - Integração Digital de Informações em Processos de Saúde</p>
         </div>
       </footer>
     </div>

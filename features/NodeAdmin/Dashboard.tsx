@@ -1,211 +1,207 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Activity, ArrowRight, Settings, Server, 
-  CheckCircle, AlertTriangle, XCircle, Clock,
-  FileText, Shield, User, Zap, ChevronRight,
-  BarChart3, Database, Globe, ArrowUpRight,
-  Radio, Cpu, Network
+  Activity, Settings, Server, 
+  CheckCircle, AlertTriangle, XCircle,
+  FileText, Shield, User, Globe, ArrowRight,
+  Database, RefreshCw, Eye, Search, Loader2
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export const NodeDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAppStore();
+  const { user, openDrawer } = useAppStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // MOCK DATA - KPIs
+  const handleRefresh = () => {
+      setIsRefreshing(true);
+      setTimeout(() => {
+          setIsRefreshing(false);
+      }, 1000);
+  };
+
+  // 1. KPI Data
   const operationalKpis = [
-    { id: 1, label: 'Solicitações Enviadas', value: '1,204', variation: '+5%', actionLink: '/node-admin/audit-reports?type=cases', color: 'text-blue-600' },
-    { id: 2, label: 'Solicitações Recebidas', value: '850', variation: '+12%', actionLink: '/node-admin/audit-reports?type=cases', color: 'text-indigo-600' },
-    { id: 3, label: 'Docs Compartilhados', value: '892', variation: '+8%', actionLink: '/node-admin/audit-reports?type=documents', color: 'text-emerald-600' },
-    { id: 4, label: 'Acessos Bloqueados', value: '14', variation: '-2%', actionLink: '/node-admin/audit-reports?type=security', color: 'text-red-600' },
-    { id: 5, label: 'Consentimentos', value: '342', variation: '+15%', actionLink: '/node-admin/audit-reports?type=consents', color: 'text-amber-600' },
+    { id: 1, indicator: 'Solicitações Enviadas', value: '1,204', trend: '+5%', trendType: 'up', action: 'Ver Detalhes', link: '/node-admin/audit-reports?type=case_sent' },
+    { id: 2, indicator: 'Solicitações Recebidas', value: '850', trend: '+12%', trendType: 'up', action: 'Ver Detalhes', link: '/node-admin/audit-reports?type=case_received' },
+    { id: 3, indicator: 'Documentos Compartilhados', value: '892', trend: '+8%', trendType: 'up', action: 'Auditar', link: '/node-admin/audit-reports?type=doc_shared' },
+    { id: 4, indicator: 'Acessos Bloqueados (LGPD)', value: '14', trend: '-2%', trendType: 'down', action: 'Investigar', link: '/node-admin/audit-reports?result=DENIED' },
+    { id: 5, indicator: 'Consentimentos Ativos', value: '342', trend: '+15%', trendType: 'up', action: 'Gerenciar', link: '/federation/policies' },
   ];
 
-  // MOCK DATA - Activity
-  const recentActivity = [
-    { id: 'EV-001', date: '10:45', user: 'Dr. Ricardo', role: 'NODE_ADMIN', action: 'READ_DOC', patient: 'Maria Silva', result: 'APPROVED', policy: 'POL-CLIN-01' },
-    { id: 'EV-002', date: '09:30', user: 'Enf. Carla', role: 'UPA', action: 'WRITE_NOTE', patient: 'João Pedro', result: 'APPROVED', policy: 'POL-INT-02' },
-    { id: 'EV-003', date: 'Ontem', user: 'Sistema Externo', role: 'EXTERNAL', action: 'REQ_ACCESS', patient: 'Ana Paula', result: 'DENIED', policy: 'POL-RESTRICT' },
-    { id: 'EV-004', date: 'Ontem', user: 'Dr. Ricardo', role: 'PROVIDER', action: 'SEARCH_FED', patient: 'Carlos M.', result: 'APPROVED', policy: 'POL-FED-01' },
-    { id: 'EV-005', date: 'Ontem', user: 'Regulador Central', role: 'REGULATOR', action: 'CHECK_ELIGIBILITY', patient: 'Manoel Gomes', result: 'APPROVED', policy: 'POL-REG-05' },
-    { id: 'EV-006', date: 'Ontem', user: 'Auditoria Auto', role: 'SYSTEM', action: 'INTEGRITY_CHECK', patient: 'N/A', result: 'APPROVED', policy: 'SYS-AUDIT' },
+  // 2. Audit Trail Data
+  const auditTrail = [
+    { id: 'EV-001', time: '10:45:22', user: 'Dr. Ricardo', role: 'NODE_ADMIN', action: 'READ_DOC', patient: 'Maria Silva', result: 'APPROVED' },
+    { id: 'EV-002', time: '10:44:10', user: 'Enf. Carla', role: 'UPA', action: 'WRITE_NOTE', patient: 'João Pedro', result: 'APPROVED' },
+    { id: 'EV-003', time: '10:42:05', user: 'Ext. System', role: 'EXTERNAL', action: 'REQ_ACCESS', patient: 'Ana Paula', result: 'DENIED' },
+    { id: 'EV-004', time: '10:40:00', user: 'Dr. Ricardo', role: 'PROVIDER', action: 'SEARCH_FED', patient: 'Carlos M.', result: 'APPROVED' },
+    { id: 'EV-005', time: '10:35:12', user: 'Reg. Central', role: 'REGULATOR', action: 'CHECK_ELIG', patient: 'Manoel Gomes', result: 'APPROVED' },
   ];
 
-  // MOCK DATA - Services
+  // 3. System Health Data
   const services = [
-    { name: 'API Gateway', status: 'ONLINE', latency: '45ms', load: '12%' },
-    { name: 'Serviço de Documentos', status: 'ONLINE', latency: '120ms', load: '34%' },
-    { name: 'Serviço de Consentimento', status: 'WARN', latency: '850ms', load: '89%' },
-    { name: 'Serviço de Auditoria', status: 'ONLINE', latency: '200ms', load: '22%' },
+    { name: 'API Gateway (Northbound)', status: 'ONLINE', latency: '45ms', lastCheck: 'Há 10s' },
+    { name: 'Serviço de Documentos (Blob)', status: 'ONLINE', latency: '120ms', lastCheck: 'Há 30s' },
+    { name: 'Serviço de Consentimento', status: 'WARN', latency: '850ms', lastCheck: 'Há 1m' },
+    { name: 'Serviço de Auditoria (Ledger)', status: 'ONLINE', latency: '200ms', lastCheck: 'Há 5s' },
   ];
 
   return (
-    <div className="animate-fade-in-up pb-20 max-w-[1600px] mx-auto">
+    <div className="animate-fade-in-up pb-20 max-w-full mx-auto space-y-8 font-sans">
       
-      {/* HEADER TÉCNICO */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-slate-200 pb-8">
+      {/* HEADER INSTITUCIONAL */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-6">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-             <div className="p-2 bg-slate-900 text-white rounded-lg">
-                <Globe size={18} />
-             </div>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Federação Nacional</span>
+          <div className="flex items-center gap-2 mb-1">
+             <Globe size={16} className="text-slate-500" />
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Governança Federada</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">Monitoramento do Nó</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1 font-mono">
-            ORG_ID: <span className="text-blue-600">{user?.orgId || 'NODE-SP-01'}</span> • STATUS: <span className="text-emerald-600">ATIVO</span>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Dashboard do Nó: {user?.nodeName}</h1>
+          <p className="text-slate-500 text-xs font-medium mt-1 font-mono">
+            ORG_ID: <span className="text-blue-600">{user?.orgId || 'NODE-SP-01'}</span> • STATUS: <span className="text-emerald-600">ONLINE</span>
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
            <button 
-             onClick={() => navigate('/federation/policies')}
-             className="px-6 py-3 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2"
+             onClick={handleRefresh}
+             disabled={isRefreshing}
+             className="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-600 rounded-md font-bold text-xs uppercase tracking-widest hover:bg-slate-200 flex items-center gap-2 transition-all disabled:opacity-70"
            >
-             <Shield size={16}/> Políticas
-           </button>
-           <button 
-             onClick={() => navigate('/node-admin/config')}
-             className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg"
-           >
-             <Settings size={16}/> Configurar Nó
+             <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''}/> {isRefreshing ? 'Atualizando...' : 'Atualizar Dados'}
            </button>
         </div>
       </div>
 
-      {/* SEÇÃO 1: BARRA DE KPIs (Divisores em vez de Cards) */}
-      <div className="bg-white border border-slate-200 rounded-2xl mb-10 shadow-sm overflow-hidden">
-         <div className="grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-            {operationalKpis.map((kpi) => (
-               <div key={kpi.id} className="p-6 group hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(kpi.actionLink)}>
-                  <div className="flex justify-between items-start mb-2">
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">{kpi.label}</p>
-                     <ArrowUpRight size={14} className="text-slate-300 group-hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"/>
-                  </div>
-                  <div className="flex items-end gap-3">
-                     <span className={`text-3xl font-black ${kpi.color} tracking-tight`}>{kpi.value}</span>
-                     <span className={`text-[10px] font-bold mb-1.5 ${kpi.variation.includes('-') ? 'text-red-500' : 'text-emerald-500'} bg-slate-100 px-1.5 py-0.5 rounded`}>
-                        {kpi.variation}
-                     </span>
-                  </div>
-               </div>
-            ))}
+      {/* 1. TABELA DE INDICADORES OPERACIONAIS */}
+      <section className="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden">
+         <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+               <Activity size={14}/> Indicadores Operacionais (24h)
+            </h3>
          </div>
-      </div>
+         <table className="w-full text-left border-collapse">
+            <thead>
+               <tr className="bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-3">Indicador</th>
+                  <th className="px-6 py-3">Valor Atual</th>
+                  <th className="px-6 py-3">Tendência</th>
+                  <th className="px-6 py-3 text-right">Ação</th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+               {operationalKpis.map((kpi) => (
+                  <tr key={kpi.id} className="hover:bg-slate-50 transition-colors">
+                     <td className="px-6 py-3 font-bold uppercase">{kpi.indicator}</td>
+                     <td className="px-6 py-3 font-mono text-sm font-black">{kpi.value}</td>
+                     <td className={`px-6 py-3 font-bold ${kpi.trendType === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {kpi.trend}
+                     </td>
+                     <td className="px-6 py-3 text-right">
+                        <button 
+                           onClick={() => navigate(kpi.link)}
+                           className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center justify-end gap-1 ml-auto"
+                        >
+                           {kpi.action} <ArrowRight size={12}/>
+                        </button>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </table>
+      </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-        
-        {/* SEÇÃO 2: ATIVIDADE RECENTE (Tabela Limpa) */}
-        <div className="xl:col-span-2 space-y-6">
-           <div className="flex justify-between items-center px-1">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                 <Activity size={16} className="text-blue-600"/> Trilha de Auditoria (Live)
-              </h3>
-              <button onClick={() => navigate('/node-admin/audit-reports')} className="text-[10px] font-bold text-blue-600 uppercase tracking-widest hover:underline">Ver Histórico Completo</button>
-           </div>
+      {/* 2. TRILHA DE AUDITORIA (LIVE) */}
+      <section className="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden">
+         <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+               <Shield size={14}/> Trilha de Auditoria (Live)
+            </h3>
+            <button 
+               onClick={() => navigate('/node-admin/audit-reports')}
+               className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+            >
+               Ver Histórico Completo
+            </button>
+         </div>
+         <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+               <thead>
+                  <tr className="bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                     <th className="px-6 py-3">Hora</th>
+                     <th className="px-6 py-3">Usuário</th>
+                     <th className="px-6 py-3">Papel</th>
+                     <th className="px-6 py-3">Ação</th>
+                     <th className="px-6 py-3">Paciente (Ref)</th>
+                     <th className="px-6 py-3 text-right">Resultado</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {auditTrail.map((log) => (
+                     <tr 
+                        key={log.id} 
+                        className="hover:bg-blue-50/30 cursor-pointer transition-colors"
+                        onClick={() => openDrawer('GlobalEventDetailDrawer', { ...log, node: 'LOCAL_NODE' })}
+                     >
+                        <td className="px-6 py-3 font-mono text-slate-500">{log.time}</td>
+                        <td className="px-6 py-3 font-bold">{log.user}</td>
+                        <td className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{log.role}</td>
+                        <td className="px-6 py-3 font-mono text-blue-600">{log.action}</td>
+                        <td className="px-6 py-3">{log.patient}</td>
+                        <td className="px-6 py-3 text-right">
+                           <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${log.result === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                              {log.result}
+                           </span>
+                        </td>
+                     </tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
+      </section>
 
-           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                 <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                       <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Hora</th>
-                       <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Ator / Papel</th>
-                       <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Ação / Paciente</th>
-                       <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Resultado</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                    {recentActivity.map((act, idx) => (
-                       <tr key={idx} className="hover:bg-blue-50/20 transition-colors group cursor-default">
-                          <td className="px-6 py-4 font-mono text-xs font-bold text-slate-500">{act.date}</td>
-                          <td className="px-6 py-4">
-                             <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-900">{act.user}</span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{act.role}</span>
-                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                             <div className="flex flex-col">
-                                <span className="text-xs font-bold text-blue-600 uppercase">{act.action}</span>
-                                <span className="text-[10px] font-medium text-slate-500">{act.patient}</span>
-                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                             <div className="flex items-center justify-end gap-2">
-                                <span className="font-mono text-[9px] text-slate-300 hidden group-hover:block">{act.policy}</span>
-                                <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${act.result === 'APPROVED' ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'}`}>
-                                   {act.result}
-                                </span>
-                             </div>
-                          </td>
-                       </tr>
-                    ))}
-                 </tbody>
-              </table>
-           </div>
-        </div>
+      {/* 3. SAÚDE DA INTEGRAÇÃO */}
+      <section className="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden">
+         <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
+            <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+               <Server size={14}/> Saúde da Integração
+            </h3>
+         </div>
+         <table className="w-full text-left border-collapse">
+            <thead>
+               <tr className="bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-3">Serviço</th>
+                  <th className="px-6 py-3 text-center">Status</th>
+                  <th className="px-6 py-3 text-center">Latência</th>
+                  <th className="px-6 py-3">Última Verificação</th>
+                  <th className="px-6 py-3 text-right">Ação</th>
+               </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700 font-medium">
+               {services.map((srv, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                     <td className="px-6 py-3 font-bold uppercase">{srv.name}</td>
+                     <td className="px-6 py-3 text-center">
+                        <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${srv.status === 'ONLINE' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                           {srv.status}
+                        </span>
+                     </td>
+                     <td className="px-6 py-3 text-center font-mono text-slate-500">{srv.latency}</td>
+                     <td className="px-6 py-3 text-slate-500">{srv.lastCheck}</td>
+                     <td className="px-6 py-3 text-right">
+                        <button 
+                           onClick={() => navigate('/node-admin/config')}
+                           className="px-3 py-1.5 border border-slate-200 rounded hover:bg-slate-100 text-[10px] font-bold uppercase tracking-widest text-slate-600"
+                        >
+                           Configurar
+                        </button>
+                     </td>
+                  </tr>
+               ))}
+            </tbody>
+         </table>
+      </section>
 
-        {/* SEÇÃO 3: ESTADO DE SERVIÇOS (Lista Técnica) */}
-        <div className="space-y-6">
-           <div className="flex justify-between items-center px-1">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                 <Server size={16} className="text-slate-600"/> Saúde da Integração
-              </h3>
-              <div className="flex items-center gap-2">
-                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                 <span className="text-[10px] font-bold text-emerald-600 uppercase">Operational</span>
-              </div>
-           </div>
-
-           <div className="bg-slate-900 rounded-2xl p-1 overflow-hidden shadow-xl">
-              <div className="divide-y divide-white/5 bg-slate-900 rounded-xl">
-                 {services.map((srv, idx) => (
-                    <div key={idx} className="p-5 flex items-center justify-between group hover:bg-white/5 transition-colors">
-                       <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg ${srv.status === 'ONLINE' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                             {srv.status === 'ONLINE' ? <CheckCircle size={16}/> : <AlertTriangle size={16}/>}
-                          </div>
-                          <div>
-                             <p className="text-xs font-bold text-slate-200">{srv.name}</p>
-                             <p className="text-[9px] font-mono text-slate-500 mt-0.5">Lat: {srv.latency}</p>
-                          </div>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Load</p>
-                          <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                             <div 
-                                className={`h-full rounded-full ${parseInt(srv.load) > 80 ? 'bg-amber-500' : 'bg-blue-500'}`} 
-                                style={{ width: srv.load }}
-                             ></div>
-                          </div>
-                       </div>
-                    </div>
-                 ))}
-              </div>
-              <div className="p-4 bg-slate-800/50 border-t border-white/5 flex justify-between items-center px-6">
-                 <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                    <Database size={12}/> Ledger Sync
-                 </div>
-                 <span className="font-mono text-[10px] text-emerald-400">BLOQUE #921.402 VÁLIDO</span>
-              </div>
-           </div>
-
-           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Network size={14}/> Topologia de Rede</h4>
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                 <span>Nós Conectados (Peers)</span>
-                 <span>14/15</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                 <div className="h-full bg-emerald-500 w-[94%]"></div>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                 Sua conexão com o backbone nacional está estável. Certificado ICP-Brasil expira em 120 dias.
-              </p>
-           </div>
-        </div>
-
-      </div>
     </div>
   );
 };

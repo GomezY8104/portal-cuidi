@@ -1,169 +1,156 @@
+
 import React, { useState } from 'react';
 import { 
-  ArrowLeft, Clock, MessageSquare, ShieldCheck, 
-  Send, FileText, Globe, AlertCircle, Info,
-  History, User, Activity, MoreVertical,
-  CheckCircle, Paperclip, MessageCircle,
-  FileSearch, Lock, ExternalLink, UserPlus,
-  Share2, FilePlus
+  ArrowLeft, FileText, Activity, Clock, 
+  MessageSquare, History, Shield, Globe, 
+  Download, AlertCircle
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 
 export const CaseDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { openModal } = useAppStore();
   const { id } = useParams();
-  const [msg, setMsg] = useState('');
+  const [activeTab, setActiveTab] = useState<'RESUMO' | 'DOCS' | 'TRAMITE'>('RESUMO');
+
+  // Dados Mockados para visualização
+  const caseData = {
+    id: id || 'APS-24-001',
+    patient: 'MARIA APARECIDA DA SILVA',
+    age: 58,
+    cpf: '123.456.789-00',
+    spec: 'CARDIOLOGIA',
+    cid: 'I20 - ANGINA PECTORIS',
+    priority: 'ALTA',
+    status: 'DEVOLVIDO',
+    date: '25/10/2024',
+    history: 'Paciente refere dor precordial tipo aperto aos médios esforços há 2 meses. Hipertensa e diabética. ECG na unidade mostrou isquemia parede inferior.',
+    returnMessage: 'Solicito anexar Teste Ergométrico recente ou Ecocardiograma para melhor estratificação de risco antes do agendamento.',
+    regulator: 'DR. REGULADOR CENTRAL'
+  };
 
   return (
-    <div className="space-y-8 animate-fade-in-up pb-10">
-      {/* Header Simplificado */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-900 transition-all shadow-sm">
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-3 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest">Aguardando Informação</span>
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter">PROTOCOLO: #{id}</span>
+    <div className="max-w-6xl mx-auto pb-20 font-sans text-slate-900 animate-in fade-in duration-300">
+      
+      {/* HEADER DE COMANDO */}
+      <div className="bg-white border border-slate-300 rounded-sm p-6 mb-6 shadow-sm">
+         <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-4">
+               <button onClick={() => navigate('/aps')} className="p-2 border border-slate-200 rounded-sm hover:bg-slate-50 text-slate-500"><ArrowLeft size={18}/></button>
+               <div>
+                  <h1 className="text-xl font-black uppercase text-slate-800 leading-none">{caseData.patient}</h1>
+                  <p className="text-xs text-slate-500 font-bold uppercase mt-1">
+                     Protocolo: <span className="font-mono text-blue-700">{caseData.id}</span> • {caseData.age} ANOS • CPF {caseData.cpf}
+                  </p>
+               </div>
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Maria Aparecida da Silva</h1>
-          </div>
-        </div>
-        <div className="flex gap-2">
-           <button className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-slate-900 transition-all"><MoreVertical size={20}/></button>
-        </div>
+            <div className="text-right">
+               <span className={`inline-block px-3 py-1 border rounded-sm text-xs font-black uppercase tracking-widest ${caseData.status === 'DEVOLVIDO' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-200'}`}>
+                  {caseData.status}
+               </span>
+               <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Prioridade {caseData.priority}</p>
+            </div>
+         </div>
+
+         {/* ALERTA DE DEVOLUÇÃO (SE HOUVER) */}
+         {caseData.status === 'DEVOLVIDO' && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-sm mb-2">
+               <div className="flex items-center gap-2 text-amber-800 font-black text-xs uppercase tracking-widest mb-1">
+                  <AlertCircle size={14}/> Pendência Regulatória
+               </div>
+               <p className="text-sm font-medium text-amber-900 leading-relaxed">
+                  "{caseData.returnMessage}" — <strong>{caseData.regulator}</strong>
+               </p>
+               <div className="mt-3">
+                  <button className="px-4 py-2 bg-amber-600 text-white font-bold text-xs uppercase rounded-sm hover:bg-amber-700">Responder Pendência</button>
+               </div>
+            </div>
+         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-           {/* Metadados */}
-           <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-8">
-              <h3 className="text-xl font-bold flex items-center gap-2 border-b border-slate-50 pb-6"><FileText size={20} className="text-blue-600"/> Metadados do Encaminhamento</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
-                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialidade Solicitada</p>
-                   <p className="font-bold text-slate-900 mt-1">Cardiologia (CID-10: I00-I99)</p>
-                 </div>
-                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Solicitação</p>
-                   <p className="font-bold text-slate-900 mt-1">15 Outubro 2024</p>
-                 </div>
-                 <div className="sm:col-span-2 p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Justificativa Clínica</p>
-                   <p className="text-slate-600 leading-relaxed font-medium">
-                     Paciente com quadro de dispneia aos esforços e dor precordial esporádica. Histórico familiar de DCV. Hipertensa controlada. Solicita-se avaliação especializada para estratificação de risco cirúrgico.
-                   </p>
-                 </div>
-              </div>
-           </div>
+      {/* ABAS DE NAVEGAÇÃO */}
+      <div className="flex border-b border-slate-300 mb-6">
+         {[
+            { id: 'RESUMO', label: 'Resumo Clínico', icon: <FileText size={16}/> },
+            { id: 'DOCS', label: 'Documentos', icon: <Activity size={16}/> },
+            { id: 'TRAMITE', label: 'Trâmite & Histórico', icon: <History size={16}/> }
+         ].map(tab => (
+            <button 
+               key={tab.id}
+               onClick={() => setActiveTab(tab.id as any)}
+               className={`flex items-center gap-2 px-6 py-3 text-xs font-black uppercase tracking-widest border-b-4 transition-all ${activeTab === tab.id ? 'border-blue-700 text-blue-800 bg-blue-50' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+            >
+               {tab.icon} {tab.label}
+            </button>
+         ))}
+      </div>
 
-           {/* Histórico */}
-           <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-8">
-              <div className="flex justify-between items-center border-b border-slate-50 pb-6">
-                <h3 className="text-xl font-bold flex items-center gap-2"><History size={20} className="text-blue-600"/> Histórico de Decisões</h3>
-                <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Auditoria Ledger</button>
-              </div>
-              <div className="relative pl-8 space-y-10">
-                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-100 rounded-full"></div>
-                 {[
-                   { title: 'Devolvido para Informação', actor: 'Regulador Central (Leste-01)', time: 'Hoje, 10:15', desc: 'Necessário anexar o ECG para qualificação do risco.', type: 'WARN' },
-                   { title: 'Elegibilidade Verificada', actor: 'Motor de Regras CUIDI', time: 'Ontem, 16:30', desc: 'Caso cumpre critérios federados de encaminhamento.', type: 'INFO' },
-                   { title: 'Encaminhamento Transmitido', actor: 'Enf. Joana (UBS Norte)', time: 'Ontem, 09:00', desc: 'Processo iniciado pelo nó assistencial de origem.', type: 'SUCCESS' },
-                 ].map((ev, idx) => (
-                   <div key={idx} className="relative group">
-                      <div className={`absolute left-[-36px] top-0 w-4 h-4 rounded-full border-4 border-white group-hover:scale-125 transition-transform ${ev.type === 'WARN' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : ev.type === 'SUCCESS' ? 'bg-emerald-600' : 'bg-blue-600'} `}></div>
-                      <div className="bg-slate-50/50 p-6 rounded-2xl border border-transparent hover:border-slate-100 transition-all">
-                         <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold text-slate-900 text-base">{ev.title}</h4>
-                            <span className="text-[10px] font-black text-slate-400 uppercase">{ev.time}</span>
-                         </div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 opacity-60">Ator: {ev.actor}</p>
-                         <p className="text-sm text-slate-500 font-medium leading-relaxed italic">{ev.desc}</p>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
-        </div>
+      {/* CONTEÚDO DA ABA */}
+      <div className="bg-white border border-slate-200 rounded-sm min-h-[400px]">
+         
+         {activeTab === 'RESUMO' && (
+            <div className="p-8 space-y-8">
+               <div className="grid grid-cols-2 gap-8 text-sm">
+                  <div className="p-4 bg-slate-50 border border-slate-200">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Especialidade Solicitada</p>
+                     <p className="font-bold text-slate-900">{caseData.spec}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-200">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diagnóstico (CID-10)</p>
+                     <p className="font-bold text-slate-900">{caseData.cid}</p>
+                  </div>
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">História Clínica / Justificativa</p>
+                  <div className="p-6 border border-slate-200 rounded-sm bg-white text-slate-700 leading-relaxed font-medium">
+                     {caseData.history}
+                  </div>
+               </div>
+            </div>
+         )}
 
-        {/* Card de Mensagens e Ações Integradas */}
-        <div className="space-y-8">
-           <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl flex flex-col h-[750px] relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><MessageSquare size={120}/></div>
-              
-              <div className="flex justify-between items-center border-b border-white/10 pb-6 relative z-10">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <MessageCircle size={20} className="text-blue-400"/> Canal do Regulador
-                </h3>
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              </div>
+         {activeTab === 'DOCS' && (
+            <div>
+               <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                  <h3 className="text-xs font-black uppercase text-slate-600">Documentos Anexados</h3>
+                  <button className="text-[10px] font-bold text-blue-700 uppercase hover:underline flex items-center gap-1">
+                     <Globe size={12}/> Buscar na Rede
+                  </button>
+               </div>
+               <table className="w-full text-left text-xs">
+                  <thead className="bg-white border-b border-slate-200 text-slate-500 uppercase font-bold text-[9px] tracking-wider">
+                     <tr><th className="px-6 py-3">Nome do Arquivo</th><th className="px-6 py-3">Origem</th><th className="px-6 py-3">Data</th><th className="px-6 py-3 text-right">Ação</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                     <tr>
+                        <td className="px-6 py-3 font-bold">ECG_ADMISSAO.PDF</td>
+                        <td className="px-6 py-3">UBS JARDIM DAS FLORES</td>
+                        <td className="px-6 py-3">25/10/2024</td>
+                        <td className="px-6 py-3 text-right"><button className="text-blue-600 hover:underline font-bold"><Download size={14}/></button></td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+         )}
 
-              <div className="flex-1 overflow-y-auto space-y-4 py-6 pr-2 custom-scrollbar relative z-10">
-                 <div className="bg-white/5 p-5 rounded-2xl border border-white/10 text-xs">
-                    <p className="text-blue-400 font-black uppercase mb-1 text-[9px]">Regulador Territorial</p>
-                    <p className="text-slate-300 font-medium leading-relaxed">Poderia importar o laudo de laboratório do nó de origem federado?</p>
-                 </div>
-                 <div className="bg-blue-600 p-5 rounded-2xl text-xs ml-8 shadow-lg">
-                    <p className="text-white/70 font-black uppercase mb-1 text-[9px]">Você (APS)</p>
-                    <p className="text-white font-medium leading-relaxed">Sim, estou localizando os dados na rede federada agora mesmo.</p>
-                 </div>
-              </div>
+         {activeTab === 'TRAMITE' && (
+            <div className="p-8">
+               <div className="space-y-6 relative border-l-2 border-slate-200 ml-3 pl-8 py-2">
+                  <div className="relative">
+                     <div className="absolute -left-[41px] top-0 w-4 h-4 bg-amber-500 rounded-full border-2 border-white shadow-sm"></div>
+                     <p className="text-xs font-black text-slate-900 uppercase">Devolução para Complementação</p>
+                     <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Hoje, 10:30 • Dr. Regulador</p>
+                     <p className="text-sm bg-amber-50 p-3 border border-amber-100 rounded-sm text-amber-900">"{caseData.returnMessage}"</p>
+                  </div>
+                  <div className="relative">
+                     <div className="absolute -left-[41px] top-0 w-4 h-4 bg-slate-300 rounded-full border-2 border-white"></div>
+                     <p className="text-xs font-black text-slate-900 uppercase">Encaminhamento Criado</p>
+                     <p className="text-[10px] text-slate-500 uppercase font-bold">25/10/2024 09:00 • Enf. Responsável</p>
+                  </div>
+               </div>
+            </div>
+         )}
 
-              {/* Ações Integradas de Subsídios */}
-              <div className="space-y-3 relative z-10 bg-slate-800/50 p-6 rounded-[2rem] border border-white/5 mb-4 shadow-inner">
-                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Ações Integradas de Documentação</p>
-                 <div className="grid grid-cols-1 gap-2">
-                    <button 
-                      onClick={() => navigate(`/aps/case/${id}/search`)}
-                      className="flex items-center gap-3 px-5 py-4 bg-white/5 hover:bg-indigo-600 border border-white/10 rounded-2xl text-left transition-all group"
-                    >
-                       <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg group-hover:bg-white group-hover:text-indigo-600"><Globe size={16}/></div>
-                       <div>
-                          <p className="text-xs font-bold text-white leading-none">Anexar Documento Federado</p>
-                          <p className="text-[9px] text-slate-400 mt-1 group-hover:text-indigo-100">Busca em outros nós da rede</p>
-                       </div>
-                    </button>
-
-                    <button 
-                      onClick={() => openModal('NotifyCitizenModal', { patient: 'Maria Aparecida da Silva' })}
-                      className="flex items-center gap-3 px-5 py-4 bg-white/5 hover:bg-amber-600 border border-white/10 rounded-2xl text-left transition-all group"
-                    >
-                       <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg group-hover:bg-white group-hover:text-amber-600"><UserPlus size={16}/></div>
-                       <div>
-                          <p className="text-xs font-bold text-white leading-none">Solicitar ao Paciente</p>
-                          <p className="text-[9px] text-slate-400 mt-1 group-hover:text-amber-100">Notificar via App/SMS CUIDI</p>
-                       </div>
-                    </button>
-                 </div>
-              </div>
-
-              {/* Input de Chat */}
-              <div className="mt-auto pt-6 border-t border-white/10 relative z-10">
-                 <div className="relative">
-                    <input 
-                      value={msg}
-                      onChange={e => setMsg(e.target.value)}
-                      placeholder="Responder ao regulador..." 
-                      className="w-full pl-5 pr-14 py-5 bg-white/5 border border-white/10 rounded-2xl text-sm text-white outline-none focus:border-blue-500 transition-all shadow-inner placeholder:text-slate-600" 
-                    />
-                    <button className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
-                       <Send size={18}/>
-                    </button>
-                 </div>
-              </div>
-           </div>
-
-           {/* Card de Informação de Segurança */}
-           <div className="p-6 bg-blue-50 rounded-[2rem] border border-blue-100 flex gap-4 text-blue-900 shadow-sm animate-in fade-in">
-             <Lock size={20} className="shrink-0 text-blue-600" />
-             <p className="text-[11px] font-medium leading-relaxed italic">
-               "Este canal é auditado em tempo real pelo ledger federado. Toda troca de informação assistencial gera um rastro imutável de conformidade."
-             </p>
-           </div>
-        </div>
       </div>
     </div>
   );

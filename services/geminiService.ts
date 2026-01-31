@@ -1,77 +1,102 @@
+// Polyfill global fetch para Node.js (Vite backend)
+import fetch from 'node-fetch';
+if (!globalThis.fetch) {
+  globalThis.fetch = fetch;
+}
+// Este archivo ya no es necesario. Toda la lógica de Gemini está en el backend proxy.
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectFile, AnalysisResult } from "../types";
-
-const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-export const analyzeProject = async (files: ProjectFile[]): Promise<AnalysisResult> => {
+// API Key fixa para auditoria IA de administrador
+const getAIClient = () => new GoogleGenerativeAI("AIzaSyBb6JbZagOCLathuXlSlEWF2rOOsSMaaLw");
+// Contexto técnico da API (Documentação Mockada para a IA)
+const API_DOCS_CONTEXT = `
+VOCÊ É UM ARQUITETO DE SOLUÇÕES SÊNIOR DA PLATAFORMA FEDERADA CUIDI.
+// Contexto de Dados (Estrutura para análise de KPIs)
+const DATA_ANALYST_CONTEXT = `
+VOCÊ É UM CIENTISTA DE DADOS SÊNIOR DO SUS.
+export const sendFederationMessage = async (
+  message: string, 
+  mode: 'API_SUPPORT' | 'DATA_INSIGHTS', 
   const ai = getAIClient();
-  
-  const criticalFiles = files.filter(f => 
-    f.name.match(/(package\.json|README\.md|main\.tsx|App\.tsx|index\.tsx|routes\.ts|config\.js|settings\.py|requirements\.txt|go\.mod|Cargo\.toml)/i)
-    || f.path.includes('src/')
-    || f.path.includes('app/')
-  ).slice(0, 20);
-
-  const fileContext = criticalFiles.map(f => `Archivo: ${f.path}\nContenido:\n${f.content.substring(0, 8000)}`).join('\n\n---\n\n');
-
-  const prompt = `Actúa como un Arquitecto de Software Senior. Analiza este proyecto de código y proporciona una visión técnica profunda. 
-  Aquí tienes el contexto de los archivos principales:\n\n${fileContext}\n\n
-  Por favor, responde exclusivamente en formato JSON con la siguiente estructura:
-  {
-    "overview": "Resumen ejecutivo de la funcionalidad y propósito",
-    "architecture": "Análisis detallado de patrones, estructura de carpetas y flujo de datos",
-    "technologies": ["Lista exhaustiva de frameworks, lenguajes y librerías clave"],
-    "suggestions": ["5 recomendaciones críticas para mejorar mantenibilidad, rendimiento o escalabilidad"],
-    "securityConcerns": ["Auditoría rápida de vulnerabilidades, secretos expuestos o malas prácticas de seguridad"]
-  }`;
-
+  let systemInstruction = '';
+  if (mode === 'API_SUPPORT') {
+    systemInstruction = API_DOCS_CONTEXT;
+  } else {
+    const dataString = JSON.stringify(currentSystemData || {}, null, 2);
+    systemInstruction = DATA_ANALYST_CONTEXT.replace('{{CURRENT_DATA}}', dataString);
+  }
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            overview: { type: Type.STRING },
-            architecture: { type: Type.STRING },
-            technologies: { type: Type.ARRAY, items: { type: Type.STRING } },
-            suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-            securityConcerns: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ["overview", "architecture", "technologies", "suggestions", "securityConcerns"]
-        }
-      }
-    });
-
-    return JSON.parse(response.text || '{}') as AnalysisResult;
+    const model = ai.getGenerativeModel({
+      model: 'gemini-pro',
+      systemInstruction,
+    const result = await model.generateContent([ { role: 'user', parts: [{ text: message }] } ]);
+    return result.response.text();
   } catch (error) {
-    console.error("Error analizando con Gemini:", error);
-    throw new Error("No se pudo completar el análisis del proyecto.");
+    console.error("Erro no Assistente CUIDI:", error);
+    return "Desculpe, o serviço de inteligência federada está temporariamente indisponível. Verifique sua chave de API.";
   }
 };
 
-export const chatWithProject = async (files: ProjectFile[], question: string) => {
-  const ai = getAIClient();
-  // Incluimos contenido de archivos para que Gemini sepa de qué hablamos
-  // Priorizamos archivos pequeños y relevantes para no exceder límites
-  const contextFiles = files.filter(f => f.size < 30000).slice(0, 20);
-  const fileContext = contextFiles.map(f => `Ruta: ${f.path}\nContenido:\n${f.content}`).join('\n\n---\n\n');
-  
-  const chat = ai.chats.create({
-    model: 'gemini-3-flash-preview',
-    config: {
-      systemInstruction: `Eres un Programador Senior y Copiloto de Desarrollo.
-      Estás trabajando DENTRO de un editor de código con el usuario.
-      El usuario te enviará preguntas o peticiones de cambio sobre sus archivos.
-      Tu objetivo es ayudarle a escribir mejor código, arreglar bugs o implementar nuevas funcionalidades basándote en su contexto actual.
-      Si te pide código, dáselo de forma clara y lista para copiar.
-      Contexto de los archivos actuales:\n${fileContext}`,
-    }
-  });
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-  const response = await chat.sendMessage({ message: question });
-  return response.text;
+// API Key fixa para auditoria IA de administrador
+const getAIClient = () => new GoogleGenerativeAI("AIzaSyBb6JbZagOCLathuXlSlEWF2rOOsSMaaLw");
+
+// Contexto técnico da API (Documentação Mockada para a IA)
+const API_DOCS_CONTEXT = `
+VOCÊ É UM ARQUITETO DE SOLUÇÕES SÊNIOR DA PLATAFORMA FEDERADA CUIDI.
+Sua função é ajudar administradores a integrar novos nós e resolver problemas de API.
+
+DADOS TÉCNICOS DA FEDERAÇÃO:
+1. Autenticação: mTLS (Mutual TLS) obrigatório para todos os nós. Tokens JWT assinados com certificado A3.
+2. Endpoints Principais:
+   - POST /v1/connect: Handshake inicial.
+   - GET /v1/patient/{cns}: Busca federada de paciente.
+   - POST /v1/audit/log: Registro obrigatório no Ledger.
+3. Erros Comuns:
+   - 401 Unauthorized: Certificado revogado ou expirado.
+   - 403 Forbidden: Nó sem política ativa para o tipo de dado solicitado.
+   - 429 Too Many Requests: Limite de rate limit (1000 req/min).
+4. Padrão de Dados:
+   - Utilizamos FHIR R4 para dados clínicos.
+   - JSON simples para metadados de auditoria.
+
+Responda dúvidas sobre como conectar, exemplos de JSON, curl, e diagnósticos de erro.
+`;
+
+// Contexto de Dados (Estrutura para análise de KPIs)
+const DATA_ANALYST_CONTEXT = `
+VOCÊ É UM CIENTISTA DE DADOS SÊNIOR DO SUS.
+Sua função é analisar métricas operacionais e logs de auditoria para encontrar anomalias e sugerir melhorias.
+
+DADOS ATUAIS DO SISTEMA (Snapshot):
+{{CURRENT_DATA}}
+
+Responda perguntas sobre tendências, gargalos e segurança com base APENAS nesses dados. Seja conciso e executivo.
+`;
+
+export const sendFederationMessage = async (
+  message: string, 
+  mode: 'API_SUPPORT' | 'DATA_INSIGHTS', 
+  currentSystemData?: any
+) => {
+  const ai = getAIClient();
+  let systemInstruction = '';
+  if (mode === 'API_SUPPORT') {
+    systemInstruction = API_DOCS_CONTEXT;
+  } else {
+    const dataString = JSON.stringify(currentSystemData || {}, null, 2);
+    systemInstruction = DATA_ANALYST_CONTEXT.replace('{{CURRENT_DATA}}', dataString);
+  }
+  try {
+    const model = ai.getGenerativeModel({
+      model: 'gemini-pro',
+      systemInstruction,
+      generationConfig: { temperature: 0.4 }
+    });
+    const result = await model.generateContent([ { role: 'user', parts: [{ text: message }] } ]);
+    return result.response.text();
+  } catch (error) {
+    console.error("Erro no Assistente CUIDI:", error);
+    return "Desculpe, o serviço de inteligência federada está temporariamente indisponível. Verifique sua chave de API.";
+  }
 };

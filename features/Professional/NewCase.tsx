@@ -1,19 +1,16 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
-  ArrowLeft, Search, UserPlus, Globe, 
-  ChevronRight, CheckCircle, 
-  Stethoscope, ShieldAlert,
-  Loader2, Activity, 
-  ChevronLeft, Send, Hospital, X,
-  FileText, Plus, ListChecks,
-  Trash2, RefreshCw, Microscope, ImageIcon, Video, User as UserIcon, MapPin, ChevronDown, Cpu, Eye, ArrowUpRight,
-  ClipboardList, AlertTriangle, Building2, UploadCloud, Smartphone, Info, CheckSquare, Square, Paperclip, Fingerprint, Lock,
-  Sparkles, Lightbulb
+  ArrowLeft, Search, Save, Send, UploadCloud, 
+  FileText, Globe, AlertCircle, CheckCircle, X,
+  UserPlus, ChevronRight, ChevronLeft, Smartphone,
+  Printer, Lock, Sparkles, Lightbulb, Building2,
+  ChevronDown, CheckSquare, Square, Phone, Heart, Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import { MOCK_PATIENTS } from '../../mocks/seed';
-import { MOCK_ICD_DB, ICDEntry } from '../../mocks/icd_seed';
+import { MOCK_ICD_DB, ICDEntry } from '../../mocks/icd_seed'; 
 import { ICDSelectionRow } from '../../components/Inputs/ICDSelectionRow';
 
 export const NewCasePage: React.FC = () => {
@@ -21,611 +18,621 @@ export const NewCasePage: React.FC = () => {
   const { 
     openModal, 
     openDrawer, 
-    user, 
     attachedDocs, 
-    removeAttachedDoc,
     newCaseData,        
-    updateNewCaseData,  
-    resetNewCaseData    
+    updateNewCaseData,
+    resetNewCaseData,
+    user,
+    removeAttachedDoc,
+    addApsCase,
+    addNotification // Add Notification
   } = useAppStore();
-  
-  const { step, patient: selectedPatient, clinicalData, urgencyData, selectedRegulators } = newCaseData;
 
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState(''); 
-  const [isRegulatorDropdownOpen, setIsRegulatorDropdownOpen] = useState(false);
+  // Usamos el step del store global para persistencia al navegar
+  const { patient, clinicalData, urgencyData, step, selectedRegulators } = newCaseData;
   
-  // Estado para sugerencias de IA
+  const [searchPatient, setSearchPatient] = useState('');
+  const [specialty, setSpecialty] = useState('CARDIOLOGIA');
   const [aiSuggestions, setAiSuggestions] = useState<ICDEntry[]>([]);
+  
+  // Estado local para el dropdown de reguladores en el paso 5
+  const [isRegulatorDropdownOpen, setIsRegulatorDropdownOpen] = useState(false);
+  const regulatorDropdownRef = useRef<HTMLDivElement>(null);
 
-  const stepsLabels = ['Paciente', 'Diagnóstico', 'Urgência', 'Documentos', 'Revisão'];
-
-  const regulators = [
-    { id: 'REG-01', name: 'Central de Regulação Estadual (SESA)' },
-    { id: 'REG-02', name: 'Complexo Regulador Municipal' },
-    { id: 'REG-03', name: 'Central de Vagas de Alta Complexidade' },
-    { id: 'REG-04', name: 'Regulação de Urgência/Emergência' }
+  // MOCK de Nodos Reguladores Disponibles
+  const AVAILABLE_REGULATORS = [
+    { id: 'REG-01', name: 'Central de Regulação de Vagas - Regional 01' },
+    { id: 'REG-02', name: 'Complexo Regulador Estadual (CROSS)' },
+    { id: 'REG-03', name: 'Regulação de Alta Complexidade - Cardiologia' },
+    { id: 'REG-04', name: 'Central de Leitos de Retaguarda' }
   ];
 
-  const calculateAge = (birthDate: string) => {
-    const birth = new Date(birthDate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
+  // --- STEPS CONFIG ---
+  const stepsList = [
+    { num: 1, label: 'Identificação' },
+    { num: 2, label: 'Dados Clínicos' },
+    { num: 3, label: 'Classificação' },
+    { num: 4, label: 'Documentos' },
+    { num: 5, label: 'Revisão' }
+  ];
+
+  // Click outside handler para el dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (regulatorDropdownRef.current && !regulatorDropdownRef.current.contains(event.target as Node)) {
+        setIsRegulatorDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // --- HANDLERS ---
+  const setStep = (s: number) => updateNewCaseData({ step: s });
+
+  const handleSelectPatient = (p: any) => {
+    updateNewCaseData({ patient: p });
+    setSearchPatient('');
   };
 
-  const filteredSearchPatients = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return MOCK_PATIENTS.filter(p => p.name.toLowerCase().includes(q) || p.cpf.includes(q));
-  }, [search]);
+  const updateDiagnosis = (code: string, desc: string) => {
+    updateNewCaseData({ clinicalData: { ...clinicalData, mainDiagnosis: { code, description: desc } } });
+  };
 
-  // Lógica de "IA" para sugerir CIDs baseados nas notas
+  // Simulação de IA para sugestão de CID baseada no texto
   useEffect(() => {
-    if (clinicalData.notes.length > 5) {
-      const notesLower = clinicalData.notes.toLowerCase();
-      // Simulação simples de NLP: busca palavras chave na descrição dos CIDs
-      const matches = MOCK_ICD_DB.filter(entry => {
-         const words = entry.description.toLowerCase().split(' ');
-         // Se a nota contiver alguma palavra chave significativa do CID (ignorando 'de', 'do', etc)
-         return words.some(w => w.length > 4 && notesLower.includes(w));
-      }).slice(0, 3); // Top 3 sugestões
-      setAiSuggestions(matches);
+    if (clinicalData.notes.length > 3) {
+      const text = clinicalData.notes.toLowerCase();
+      const suggestions = MOCK_ICD_DB.filter(icd => {
+         const words = icd.description.toLowerCase().split(' ');
+         return words.some(w => w.length > 3 && text.includes(w));
+      }).slice(0, 3);
+      setAiSuggestions(suggestions);
     } else {
       setAiSuggestions([]);
     }
   }, [clinicalData.notes]);
 
-  const setStep = (s: number) => updateNewCaseData({ step: s });
-  const setSelectedPatient = (p: any) => updateNewCaseData({ patient: p });
-  
-  // Atualizadores específicos para estrutura dual
-  const updateMainDiagnosis = (code: string, description: string) => {
-    updateNewCaseData({ clinicalData: { ...clinicalData, mainDiagnosis: { code, description } } });
+  const applySuggestion = (icd: ICDEntry) => {
+    updateDiagnosis(icd.code, icd.description);
   };
 
-  const updateSecondaryDiagnosis = (code: string, description: string) => {
-    updateNewCaseData({ clinicalData: { ...clinicalData, secondaryDiagnosis: { code, description } } });
-  };
-
-  const setClinicalDataNotes = (notes: string) => updateNewCaseData({ clinicalData: { ...clinicalData, notes } });
-  const setUrgencyData = (data: any) => updateNewCaseData({ urgencyData: { ...urgencyData, ...data } });
-  const setSelectedRegulators = (regs: string[]) => updateNewCaseData({ selectedRegulators: regs });
-
-  const handleCancel = () => {
-    if(confirm('Deseja cancelar a solicitação? Todos os dados serão perdidos.')) {
-      resetNewCaseData();
-      navigate(-1);
-    }
-  };
-
-  const handleCreateCase = () => {
-    if (selectedRegulators.length === 0) {
-      alert('Por favor, selecione ao menos um Nó Regulador de destino.');
+  const handleSubmit = () => {
+    if(!patient || !clinicalData.mainDiagnosis.code || !clinicalData.notes) {
+      addNotification({ type: 'error', message: 'Dados incompletos. Verifique a revisão.' });
       return;
     }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      resetNewCaseData(); 
-      navigate('/aps');
-    }, 2000);
+    if (selectedRegulators.length === 0) {
+      addNotification({ type: 'warning', message: 'Selecione ao menos uma central de regulação de destino.' });
+      return;
+    }
+    
+    // PERSISTÊNCIA NA FILA (Store)
+    addApsCase({
+      id: `APS-24-${Math.floor(Math.random() * 10000)}`,
+      patient: patient.name,
+      spec: specialty,
+      priority: urgencyData.priority,
+      status: 'PENDENTE',
+      date: new Date().toLocaleDateString(),
+      update: 'Agora',
+      hasMessage: false
+    });
+
+    addNotification({ type: 'success', message: 'Solicitação protocolada com sucesso!' });
+    resetNewCaseData(); // Resetea todo, incluido el step a 1
+    navigate('/aps');
   };
 
-  const toggleRegulator = (id: string) => {
-    if (selectedRegulators.includes(id)) {
-      setSelectedRegulators(selectedRegulators.filter(r => r !== id));
-    } else {
-      setSelectedRegulators([...selectedRegulators, id]);
+  const nextStep = () => {
+    if (step === 1 && !patient) {
+      addNotification({ type: 'warning', message: 'Selecione um paciente para continuar.' });
+      return;
     }
+    if (step === 2 && (!clinicalData.mainDiagnosis.code || !clinicalData.notes)) {
+      addNotification({ type: 'warning', message: 'Preencha o diagnóstico e a história clínica.' });
+      return;
+    }
+    setStep(Math.min(step + 1, 5));
+  };
+
+  const prevStep = () => setStep(Math.max(step - 1, 1));
+
+  // Handlers para Reguladores
+  const toggleRegulator = (regName: string) => {
+    const current = selectedRegulators || [];
+    const exists = current.includes(regName);
+    updateNewCaseData({
+      selectedRegulators: exists 
+        ? current.filter(r => r !== regName)
+        : [...current, regName]
+    });
   };
 
   const toggleAllRegulators = () => {
-    if (selectedRegulators.length === regulators.length) {
-      setSelectedRegulators([]);
-    } else {
-      setSelectedRegulators(regulators.map(r => r.id));
-    }
+    const allNames = AVAILABLE_REGULATORS.map(r => r.name);
+    const current = selectedRegulators || [];
+    const isAllSelected = current.length === allNames.length;
+    
+    updateNewCaseData({
+      selectedRegulators: isAllSelected ? [] : allNames
+    });
   };
 
+  // --- FILTRO PACIENTE ---
+  const filteredPatients = useMemo(() => {
+    if(searchPatient.length < 2) return [];
+    return MOCK_PATIENTS.filter(p => p.name.toLowerCase().includes(searchPatient.toLowerCase()) || p.cpf.includes(searchPatient));
+  }, [searchPatient]);
+
   return (
-    <div className="max-w-[1200px] mx-auto space-y-8 animate-fade-in-up pb-20">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20 font-sans text-slate-900 animate-in fade-in duration-300">
       
-      {/* HEADER & TITULO */}
-      <div className="flex flex-col gap-6">
-        <button onClick={handleCancel} className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition-colors w-fit">
-          <ArrowLeft size={16} /> Cancelar e Voltar
-        </button>
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Nova Solicitação de Regulação</h1>
-          <p className="text-slate-500 font-medium mt-1">Complete o formulário passo a passo para gerar o protocolo federado.</p>
-        </div>
-      </div>
-
-      {/* STEPPER VISUAL */}
-      <div className="bg-white p-4 rounded-[1.5rem] border border-slate-200 shadow-sm">
-         <div className="flex justify-between items-center relative px-4 md:px-10 py-4">
-            {/* Linha de Conexão */}
-            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-1 bg-slate-100 -z-0 hidden md:block"></div>
-            <div 
-              className="absolute left-10 h-1 bg-green-500 top-1/2 -translate-y-1/2 transition-all duration-500 -z-0 hidden md:block" 
-              style={{ width: `${((step - 1) / (stepsLabels.length - 1)) * 100}%` }}
-            ></div>
-
-            {stepsLabels.map((label, idx) => {
-               const stepNum = idx + 1;
-               const isActive = step === stepNum;
-               const isCompleted = step > stepNum;
-
-               return (
-                 <div key={idx} className="relative z-10 flex flex-col items-center gap-2 cursor-pointer" onClick={() => step > stepNum && setStep(stepNum)}>
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs transition-all border-4 ${isActive ? 'bg-blue-600 text-white border-blue-100 shadow-lg scale-110' : isCompleted ? 'bg-green-500 text-white border-green-500' : 'bg-white text-slate-300 border-slate-200'}`}>
-                       {isCompleted ? <CheckCircle size={16} strokeWidth={4}/> : stepNum}
-                    </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-slate-300'}`}>{label}</span>
-                 </div>
-               );
-            })}
+      {/* HEADER */}
+      <div className="flex items-center justify-between border-b border-slate-300 pb-4 bg-white p-4 rounded-sm shadow-sm sticky top-0 z-10">
+         <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/aps')} className="p-2 hover:bg-slate-100 rounded text-slate-500">
+               <ArrowLeft size={20}/>
+            </button>
+            <div>
+               <h1 className="text-xl font-black uppercase tracking-tight text-slate-800">Nova Solicitação</h1>
+               <p className="text-xs text-slate-500 font-medium">Regulação Assistencial • Passo {step} de 5</p>
+            </div>
+         </div>
+         
+         {/* STEPPER VISUAL */}
+         <div className="hidden md:flex gap-2">
+            {stepsList.map(s => (
+               <div key={s.num} className={`flex items-center gap-2 px-3 py-1 rounded-sm text-[10px] font-bold uppercase ${step === s.num ? 'bg-slate-900 text-white' : step > s.num ? 'bg-slate-200 text-slate-600' : 'text-slate-300'}`}>
+                  <span>{s.num}. {s.label}</span>
+               </div>
+            ))}
          </div>
       </div>
 
-      {/* CARD PRINCIPAL DE CONTEÚDO */}
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-visible min-h-[500px] flex flex-col relative">
-        <div className="flex-1 p-8 md:p-12">
-          
-          {/* ETAPA 1: PACIENTE */}
-          {step === 1 && (
-            <div className="space-y-8 animate-in slide-in-from-right duration-300">
-               <h3 className="text-xl font-black text-slate-900 border-b border-slate-100 pb-4">Informação do Paciente</h3>
-               
-               {/* Busca */}
-               {!selectedPatient ? (
-                 <div className="space-y-6">
-                    <div className="relative group">
-                      <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                      <input 
-                        value={search} 
-                        onChange={e => setSearch(e.target.value)} 
-                        autoFocus
-                        placeholder="Buscar por CPF, CNS ou Nome..." 
-                        className="w-full pl-14 pr-6 py-5 rounded-2xl bg-slate-50 border-2 border-slate-100 outline-none font-bold text-sm focus:border-blue-500 transition-all" 
-                      />
-                    </div>
-
-                    {search.length > 1 && (
-                      <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-lg">
-                         {filteredSearchPatients.length > 0 ? (
-                           <div className="divide-y divide-slate-50">
-                             {filteredSearchPatients.map(p => (
-                               <div key={p.id} onClick={() => setSelectedPatient(p)} className="p-4 hover:bg-blue-50 cursor-pointer transition-colors flex justify-between items-center group">
-                                  <div className="flex items-center gap-4">
-                                     <div className="w-10 h-10 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center font-black text-xs group-hover:bg-blue-600 group-hover:text-white transition-all">{p.name.charAt(0)}</div>
-                                     <div>
-                                        <p className="font-bold text-slate-900 text-sm">{p.name}</p>
-                                        <p className="text-xs text-slate-500 font-mono">CPF: {p.cpf}</p>
+      <div className="px-2 min-h-[500px]">
+         
+         {/* PASSO 1: IDENTIFICAÇÃO */}
+         {step === 1 && (
+            <section className="bg-white border border-slate-300 rounded-sm overflow-visible shadow-sm animate-in slide-in-from-right">
+                <div className="bg-slate-100 px-6 py-3 border-b border-slate-300 flex justify-between items-center">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">1. Identificação do Paciente</h3>
+                   {patient && <button onClick={() => updateNewCaseData({ patient: null })} className="text-[10px] font-bold text-red-600 hover:underline uppercase">Alterar Paciente</button>}
+                </div>
+                
+                <div className="p-8">
+                   {!patient ? (
+                      <div className="max-w-2xl mx-auto space-y-6">
+                         <div className="space-y-2 relative">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Buscar Paciente (Nome, CPF ou CNS)</label>
+                            <div className="flex gap-2">
+                               <div className="relative flex-1">
+                                  <input 
+                                     value={searchPatient}
+                                     onChange={e => setSearchPatient(e.target.value)}
+                                     className="w-full p-4 pl-12 border-2 border-slate-200 rounded-sm text-sm font-bold focus:border-blue-600 outline-none uppercase bg-white text-slate-900 placeholder:text-slate-300 shadow-inner"
+                                     placeholder="DIGITE PARA PESQUISAR NA BASE..."
+                                     autoFocus
+                                  />
+                                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20}/>
+                                  
+                                  {/* DROPDOWN DE RESULTADOS */}
+                                  {searchPatient.length > 1 && (
+                                     <div className="absolute top-full left-0 w-full bg-white border border-slate-300 mt-1 shadow-2xl z-50 max-h-60 overflow-y-auto rounded-sm">
+                                        {filteredPatients.map(p => (
+                                           <button key={p.id} onClick={() => handleSelectPatient(p)} className="w-full text-left p-4 hover:bg-blue-50 border-b border-slate-100 last:border-0 group transition-colors">
+                                              <p className="font-black text-sm text-slate-800 group-hover:text-blue-700 uppercase">{p.name}</p>
+                                              <div className="flex gap-4 mt-1 text-[10px] font-bold text-slate-500 font-mono">
+                                                 <span>CPF: {p.cpf}</span>
+                                                 <span>CNS: {p.cns}</span>
+                                                 <span>NASC: {p.birthDate}</span>
+                                              </div>
+                                           </button>
+                                        ))}
+                                        {filteredPatients.length === 0 && (
+                                           <div className="p-4 text-center text-xs text-slate-400 italic font-bold uppercase">Nenhum paciente encontrado.</div>
+                                        )}
                                      </div>
-                                  </div>
-                                  <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-600"/>
+                                  )}
                                </div>
-                             ))}
-                           </div>
-                         ) : (
-                           <div className="p-8 text-center">
-                              <p className="text-slate-400 font-bold text-sm mb-4">Nenhum paciente encontrado na base federada.</p>
-                              <button onClick={() => openModal('RegisterPatientModal')} className="px-6 py-2 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center gap-2 mx-auto">
-                                <UserPlus size={14}/> Cadastrar Novo
-                              </button>
-                           </div>
+                               <button 
+                                 onClick={() => openModal('RegisterPatientModal', { 
+                                    onPatientRegistered: (p: any) => handleSelectPatient(p)
+                                 })} 
+                                 className="px-6 bg-slate-100 border border-slate-300 text-slate-700 font-black text-xs uppercase rounded-sm hover:bg-slate-200 flex items-center gap-2"
+                               >
+                                  <UserPlus size={16}/> Novo
+                               </button>
+                            </div>
+                         </div>
+                      </div>
+                   ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 border border-slate-200 bg-slate-50 rounded-sm">
+                         {/* LINHA 1 */}
+                         <div className="md:col-span-2">
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Nome Completo</p>
+                            <p className="font-black text-lg text-slate-900 uppercase">{patient.name}</p>
+                         </div>
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">CPF</p>
+                            <p className="font-mono font-bold text-slate-700">{patient.cpf}</p>
+                         </div>
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Cartão SUS (CNS)</p>
+                            <p className="font-mono font-bold text-slate-700">{patient.cns || '7000.0000.0000.0000'}</p>
+                         </div>
+
+                         {/* LINHA 2 - NOVOS CAMPOS */}
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Data de Nascimento</p>
+                            <p className="font-bold text-slate-700">{patient.birthDate}</p>
+                         </div>
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Sexo / Gênero</p>
+                            <p className="font-bold text-slate-700 uppercase">{patient.gender || 'NÃO INFORMADO'}</p>
+                         </div>
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest flex items-center gap-1"><Heart size={10} className="text-red-500"/> Tipo Sanguíneo</p>
+                            <p className="font-black text-slate-700 uppercase">{patient.bloodType || 'N/A'}</p>
+                         </div>
+                         <div>
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest flex items-center gap-1"><Phone size={10}/> Telefone</p>
+                            <p className="font-bold text-slate-700 uppercase">{patient.phone || '(00) 00000-0000'}</p>
+                         </div>
+
+                         {/* LINHA 3 */}
+                         <div className="md:col-span-2">
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Nome da Mãe</p>
+                            <p className="font-bold text-slate-700 uppercase">MARIA HELENA DA SILVA (MOCK)</p>
+                         </div>
+                         <div className="md:col-span-2">
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest flex items-center gap-1"><AlertCircle size={10} className="text-amber-500"/> Contato de Emergência</p>
+                            <p className="font-bold text-slate-700 uppercase">{patient.emergencyContact || 'NÃO CADASTRADO'}</p>
+                         </div>
+
+                         {/* LINHA 4 */}
+                         <div className="md:col-span-4 border-t border-slate-200 pt-2 mt-2">
+                            <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Endereço Residencial</p>
+                            <p className="font-bold text-slate-700 uppercase">{patient.address}</p>
+                         </div>
+                      </div>
+                   )}
+                </div>
+            </section>
+         )}
+
+         {/* PASSO 2: DADOS CLÍNICOS */}
+         {step === 2 && (
+            <section className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-sm animate-in slide-in-from-right">
+                <div className="bg-slate-100 px-6 py-3 border-b border-slate-300">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">2. Dados Clínicos e Classificação</h3>
+                </div>
+                <div className="p-8 space-y-8">
+                   
+                   <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">História Clínica / Queixa Principal <span className="text-red-500">*</span></label>
+                         {aiSuggestions.length > 0 && (
+                            <span className="text-[9px] font-black text-blue-600 uppercase flex items-center gap-1 animate-pulse"><Sparkles size={12}/> Sugestões de CID encontradas</span>
                          )}
                       </div>
-                    )}
-                 </div>
-               ) : (
-                 /* Paciente Selecionado (Inputs Travados) */
-                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">CPF do Paciente *</label>
-                          <input disabled value={selectedPatient.cpf} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-500 cursor-not-allowed outline-none" />
-                       </div>
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Idade *</label>
-                          <input disabled value={calculateAge(selectedPatient.birthDate)} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-500 cursor-not-allowed outline-none" />
-                       </div>
-                       <div className="md:col-span-2 space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nome do Paciente *</label>
-                          <div className="relative">
-                             <input disabled value={selectedPatient.name} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-500 cursor-not-allowed outline-none" />
-                             <button onClick={() => setSelectedPatient(null)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Trocar</button>
-                          </div>
-                       </div>
-                       <div className="md:col-span-2 space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Telefone de Contato *</label>
-                          <input disabled value={selectedPatient.phone} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-500 cursor-not-allowed outline-none" />
-                       </div>
-                    </div>
-                 </div>
-               )}
-            </div>
-          )}
+                      <textarea 
+                         value={clinicalData.notes}
+                         onChange={e => updateNewCaseData({ clinicalData: { ...clinicalData, notes: e.target.value } })}
+                         className="w-full p-4 border border-slate-300 rounded-sm text-sm font-medium text-slate-900 bg-white h-40 resize-none outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 shadow-inner"
+                         placeholder="Descreva a anamnese, exame físico e justificativa da solicitação..."
+                      />
+                      {/* SUGESTÕES DE IA */}
+                      {aiSuggestions.length > 0 && (
+                         <div className="flex flex-wrap gap-2 mt-2 bg-blue-50 p-3 rounded-sm border border-blue-100">
+                            <div className="flex items-center gap-1 text-blue-700 mr-2">
+                               <Lightbulb size={14}/>
+                               <span className="text-[10px] font-bold uppercase">Sugerido:</span>
+                            </div>
+                            {aiSuggestions.map(icd => (
+                               <button 
+                                 key={icd.code} 
+                                 onClick={() => applySuggestion(icd)}
+                                 className="bg-white border border-blue-200 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                               >
+                                  {icd.code} - {icd.description}
+                               </button>
+                            ))}
+                         </div>
+                      )}
+                   </div>
 
-          {/* ETAPA 2: DIAGNÓSTICO (REESTRUTURADO) */}
-          {step === 2 && (
-            <div className="space-y-10 animate-in slide-in-from-right duration-300">
-               
-               {/* 1. NOTAS CLÍNICAS (AGORA NO TOPO) */}
-               <div className="space-y-4">
-                  <div className="flex justify-between items-end px-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                       1. Anamnese & Notas Clínicas <span className="text-red-500">*</span>
-                     </label>
-                     <span className="text-[9px] font-bold text-blue-600 uppercase flex items-center gap-1">
-                        <Sparkles size={12}/> Análise em tempo real ativa
-                     </span>
-                  </div>
-                  <textarea 
-                    value={clinicalData.notes}
-                    onChange={e => setClinicalDataNotes(e.target.value)}
-                    placeholder="Descreva o estado clínico do paciente, sintomas, achados relevantes, medicamentos atuais..."
-                    className="w-full p-6 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-blue-500 font-medium text-slate-700 h-48 resize-none transition-all shadow-sm focus:shadow-md"
-                  />
-                  
-                  {/* BARRA DE SUGESTÕES IA */}
-                  {aiSuggestions.length > 0 && (
-                     <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2">
-                        <div className="flex items-center gap-2 text-indigo-800">
-                           <Lightbulb size={16} className="text-amber-500 fill-current" />
-                           <span className="text-[10px] font-black uppercase tracking-widest">Sugestões Baseadas nos Sintomas:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                           {aiSuggestions.map((sug, idx) => (
-                              <div key={idx} className="flex items-center bg-white border border-indigo-100 rounded-lg p-1 pr-3 shadow-sm hover:shadow-md transition-all">
-                                 <div className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[10px] font-black mr-2">{sug.code}</div>
-                                 <span className="text-[10px] font-medium text-slate-700 mr-3">{sug.description}</span>
-                                 <div className="flex gap-1">
-                                    <button 
-                                      onClick={() => updateMainDiagnosis(sug.code, sug.description)}
-                                      className="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-bold rounded hover:bg-blue-700 transition-colors uppercase"
-                                    >
-                                      Principal
-                                    </button>
-                                    <button 
-                                      onClick={() => updateSecondaryDiagnosis(sug.code, sug.description)}
-                                      className="px-2 py-0.5 bg-slate-200 text-slate-600 text-[8px] font-bold rounded hover:bg-slate-300 transition-colors uppercase"
-                                    >
-                                      Secund.
-                                    </button>
-                                 </div>
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  )}
-               </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-4 bg-slate-50 p-4 border border-slate-200 rounded-sm">
+                         <ICDSelectionRow 
+                            label="Hipótese Diagnóstica (CID-10)" 
+                            selectedCode={clinicalData.mainDiagnosis.code} 
+                            selectedDescription={clinicalData.mainDiagnosis.description} 
+                            onUpdate={updateDiagnosis} 
+                            required
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Especialidade Solicitada <span className="text-red-500">*</span></label>
+                         <select 
+                            value={specialty} 
+                            onChange={e => setSpecialty(e.target.value)}
+                            className="w-full p-3 bg-white border border-slate-300 rounded-sm text-xs font-bold text-slate-700 outline-none uppercase focus:border-blue-600 cursor-pointer"
+                         >
+                            <option>CARDIOLOGIA</option>
+                            <option>ORTOPEDIA</option>
+                            <option>NEUROLOGIA</option>
+                            <option>OFTALMOLOGIA</option>
+                            <option>GINECOLOGIA</option>
+                            <option>DERMATOLOGIA</option>
+                         </select>
+                      </div>
+                   </div>
+                </div>
+            </section>
+         )}
 
-               <div className="w-full h-px bg-slate-100"></div>
+         {/* PASSO 3: CLASSIFICAÇÃO */}
+         {step === 3 && (
+            <section className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-sm animate-in slide-in-from-right">
+                <div className="bg-slate-100 px-6 py-3 border-b border-slate-300">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">3. Classificação de Risco</h3>
+                </div>
+                <div className="p-8">
+                   <div className="space-y-6">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-widest">Selecione a Prioridade Clínica:</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         {['NORMAL', 'URGENTE', 'EMERGÊNCIA'].map(p => (
+                            <label key={p} className={`flex flex-col items-center justify-center p-6 border-2 rounded-sm cursor-pointer transition-all hover:shadow-md ${urgencyData.priority === p ? (p === 'EMERGÊNCIA' ? 'bg-red-50 border-red-600 text-red-700' : p === 'URGENTE' ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-blue-50 border-blue-600 text-blue-700') : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}>
+                               <input 
+                                  type="radio" 
+                                  name="priority" 
+                                  checked={urgencyData.priority === p} 
+                                  onChange={() => updateNewCaseData({ urgencyData: { ...urgencyData, priority: p as any } })}
+                                  className="hidden"
+                               />
+                               <span className="text-lg font-black uppercase">{p}</span>
+                               <span className="text-[10px] font-bold mt-2 opacity-80 uppercase text-center">
+                                  {p === 'NORMAL' ? 'Atendimento Eletivo (Fila)' : p === 'URGENTE' ? 'Prioridade na Regulação' : 'Risco de Morte / Sequelas'}
+                               </span>
+                            </label>
+                         ))}
+                      </div>
+                      
+                      {urgencyData.priority === 'EMERGÊNCIA' && (
+                         <div className="p-4 bg-red-50 border border-red-200 rounded-sm flex gap-3 text-red-900 items-start animate-in fade-in">
+                            <AlertCircle size={18} className="mt-0.5 shrink-0"/>
+                            <p className="text-xs leading-relaxed font-bold">
+                               Atenção: A classificação "EMERGÊNCIA" deve ser usada apenas para risco iminente de morte. O caso será auditado e poderá ser reclassificado.
+                            </p>
+                         </div>
+                      )}
+                   </div>
+                </div>
+            </section>
+         )}
 
-               {/* 2. CAMPOS DE DIAGNÓSTICO ESTRUTURADO (ICDSelectionRow) */}
-               <div className="space-y-6">
-                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">2. Classificação Internacional de Doenças (CID)</h3>
-                  
-                  <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl mb-6 flex gap-4">
-                     <Info size={20} className="text-slate-400 shrink-0 mt-0.5" />
-                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-slate-700">Responsabilidade Técnica</p>
-                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-                           O médico solicitante é responsável pela classificação. Você pode utilizar a busca automática, aceitar sugestões ou inserir códigos e descrições manualmente (texto livre).
-                        </p>
-                     </div>
-                  </div>
+         {/* PASSO 4: DOCUMENTOS */}
+         {step === 4 && (
+            <section className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-sm animate-in slide-in-from-right">
+                <div className="bg-slate-100 px-6 py-3 border-b border-slate-300 flex justify-between items-center">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-600">4. Documentação Anexa</h3>
+                   <div className="flex gap-2">
+                      <button onClick={() => openModal('NotifyCitizenModal', { patient: patient?.name })} className="text-[10px] font-bold text-amber-600 uppercase flex items-center gap-1 hover:bg-amber-50 px-3 py-1.5 rounded-sm transition-all border border-amber-200 bg-white">
+                         <Smartphone size={12}/> Solicitar ao Paciente
+                      </button>
+                      <button onClick={() => navigate('/aps/case/new/search')} className="text-[10px] font-bold text-blue-700 uppercase flex items-center gap-1 hover:bg-blue-50 px-3 py-1.5 rounded-sm transition-all border border-blue-200 bg-white">
+                         <Globe size={12}/> Buscar na Rede
+                      </button>
+                      <button onClick={() => openDrawer('UploadDocumentDrawer', { requestId: 'NEW', type: 'Anexo Geral' })} className="text-[10px] font-bold text-slate-700 uppercase flex items-center gap-1 hover:bg-slate-50 px-3 py-1.5 rounded-sm transition-all border border-slate-300 bg-white">
+                         <UploadCloud size={12}/> Upload Local
+                      </button>
+                   </div>
+                </div>
+                <div className="p-0">
+                   <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase font-bold text-[9px] tracking-wider">
+                         <tr><th className="px-6 py-3">Documento</th><th className="px-6 py-3">Origem</th><th className="px-6 py-3">Data</th><th className="px-6 py-3 text-right">Ação</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                         {attachedDocs.length === 0 && <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic bg-slate-50/30">Nenhum documento anexado. Utilize as opções acima.</td></tr>}
+                         {attachedDocs.map(doc => (
+                            <tr key={doc.id} className="hover:bg-slate-50">
+                               <td className="px-6 py-3 font-bold uppercase">{doc.name}</td>
+                               <td className="px-6 py-3 uppercase text-[10px]">{doc.node || 'LOCAL'}</td>
+                               <td className="px-6 py-3 font-mono text-[10px]">{doc.date || 'HOJE'}</td>
+                               <td className="px-6 py-3 text-right">
+                                  <button onClick={() => removeAttachedDoc(doc.id)} className="text-red-500 hover:text-red-700 text-[10px] font-black uppercase flex items-center gap-1 ml-auto">
+                                    <X size={12}/> Remover
+                                  </button>
+                               </td>
+                            </tr>
+                         ))}
+                      </tbody>
+                   </table>
+                </div>
+            </section>
+         )}
 
-                  <ICDSelectionRow 
-                    label="Diagnóstico Principal"
-                    selectedCode={clinicalData.mainDiagnosis.code}
-                    selectedDescription={clinicalData.mainDiagnosis.description}
-                    onUpdate={updateMainDiagnosis}
-                    required
-                  />
+         {/* PASSO 5: REVISÃO & DIRECIONAMENTO */}
+         {step === 5 && (
+            <section className="bg-white border border-slate-300 rounded-sm overflow-hidden shadow-lg animate-in slide-in-from-right flex flex-col items-center p-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                
+                {/* DOCUMENTO DE REVISÃO */}
+                <div className="bg-white border border-slate-200 w-full max-w-3xl shadow-2xl p-10 relative">
+                   <div className="absolute top-0 left-0 w-full h-2 bg-slate-900"></div>
+                   
+                   <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-8">
+                      <div className="flex items-center gap-4">
+                         <div className="p-3 bg-slate-900 text-white rounded-lg"><Building2 size={24}/></div>
+                         <div>
+                            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Solicitação de Regulação</h2>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Sistema Único de Saúde • Federação Nacional</p>
+                         </div>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Data Emissão</p>
+                         <p className="text-lg font-black text-slate-900">{new Date().toLocaleDateString()}</p>
+                      </div>
+                   </div>
 
-                  <ICDSelectionRow 
-                    label="Diagnóstico Secundário (Opcional)"
-                    selectedCode={clinicalData.secondaryDiagnosis.code}
-                    selectedDescription={clinicalData.secondaryDiagnosis.description}
-                    onUpdate={updateSecondaryDiagnosis}
-                  />
-               </div>
-            </div>
-          )}
+                   {/* 1. Unidade */}
+                   <div className="mb-8">
+                      <div className="bg-slate-900 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest w-fit mb-2">1. Unidade Solicitante</div>
+                      <div className="border border-slate-200 p-4 grid grid-cols-3 gap-4 text-xs bg-slate-50">
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Profissional</p>
+                            <p className="font-black text-slate-900 uppercase">{user?.name}</p>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Registro</p>
+                            <p className="font-black text-slate-900 uppercase">{user?.registryNumber || 'CRM/COREN'}</p>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Unidade</p>
+                            <p className="font-black text-slate-900 uppercase">{user?.nodeName}</p>
+                         </div>
+                      </div>
+                   </div>
 
-          {/* ETAPA 3: URGÊNCIA */}
-          {step === 3 && (
-            <div className="space-y-8 animate-in slide-in-from-right duration-300">
-               <h3 className="text-xl font-black text-slate-900 border-b border-slate-100 pb-4">Classificação de Urgência</h3>
-               
-               <div className="space-y-6">
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Prioridade *</label>
-                     <select 
-                        value={urgencyData.priority}
-                        onChange={e => setUrgencyData({ priority: e.target.value as any })}
-                        className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold cursor-pointer"
-                     >
-                        <option value="NORMAL">Normal - Atendimento Eletivo</option>
-                        <option value="URGENTE">Urgente - Requer atenção rápida</option>
-                        <option value="EMERGÊNCIA">Emergência - Risco imediato de vida</option>
-                     </select>
-                  </div>
+                   {/* 2. Paciente */}
+                   <div className="mb-8">
+                      <div className="bg-slate-900 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest w-fit mb-2">2. Identificação do Paciente</div>
+                      <div className="border border-slate-200 p-4 grid grid-cols-3 gap-4 text-xs">
+                         <div className="col-span-1">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Nome Completo</p>
+                            <p className="font-black text-slate-900 uppercase">{patient?.name}</p>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">CPF</p>
+                            <p className="font-black text-slate-900 uppercase">{patient?.cpf}</p>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Idade</p>
+                            <p className="font-black text-slate-900 uppercase">{patient?.age || '58'} ANOS</p>
+                         </div>
+                      </div>
+                   </div>
 
-                  <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Justificativa da Urgência *</label>
-                     <textarea 
-                        value={urgencyData.justification}
-                        onChange={e => setUrgencyData({ justification: e.target.value })}
-                        placeholder="Explique por que esta solicitação requer a prioridade selecionada..."
-                        className="w-full p-4 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium h-32 resize-none transition-all"
-                     />
-                  </div>
+                   {/* 3. Dados Clínicos */}
+                   <div className="mb-8">
+                      <div className="bg-slate-900 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest w-fit mb-2">3. Dados Clínicos e Classificação</div>
+                      <div className="border border-slate-200 p-4 text-xs space-y-4">
+                         <div className="flex justify-between border-b border-slate-100 pb-2">
+                            <div>
+                               <p className="text-[9px] font-bold text-slate-400 uppercase">Diagnóstico Principal</p>
+                               <p className="font-black text-slate-900 text-sm uppercase">{clinicalData.mainDiagnosis.code} - {clinicalData.mainDiagnosis.description}</p>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[9px] font-bold text-slate-400 uppercase">Prioridade</p>
+                               <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase text-white ${urgencyData.priority === 'EMERGÊNCIA' ? 'bg-red-600' : 'bg-blue-600'}`}>
+                                  {urgencyData.priority}
+                               </span>
+                            </div>
+                         </div>
+                         <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Resumo Clínico / Justificativa</p>
+                            <p className="font-medium text-slate-800 leading-relaxed italic bg-slate-50 p-3 rounded-sm border border-slate-100">
+                               "{clinicalData.notes}"
+                            </p>
+                         </div>
+                      </div>
+                   </div>
 
-                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex gap-3">
-                     <Info size={20} className="text-blue-600 shrink-0 mt-0.5" />
-                     <p className="text-xs text-blue-800 font-medium leading-relaxed">
-                        Nota: Solicitações urgentes entram em filas prioritárias auditadas. O uso indevido de prioridade "Emergência" pode gerar notificações de compliance.
-                     </p>
-                  </div>
-               </div>
-            </div>
-          )}
+                   {/* 4. Direcionamento (Multi-Select) */}
+                   <div className="mb-8 relative z-20">
+                      <div className="bg-slate-900 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest w-fit mb-2">4. Direcionamento (Nós Reguladores)</div>
+                      
+                      <div className="relative" ref={regulatorDropdownRef}>
+                         <button 
+                            onClick={() => setIsRegulatorDropdownOpen(!isRegulatorDropdownOpen)}
+                            className="w-full p-4 border border-slate-200 bg-white flex justify-between items-center text-xs font-bold text-slate-700 outline-none hover:bg-slate-50 transition-colors"
+                         >
+                            <span>{selectedRegulators?.length > 0 ? `${selectedRegulators.length} Centrais Selecionadas` : 'Selecione os Reguladores de Destino...'}</span>
+                            <ChevronDown size={14} className={`transition-transform ${isRegulatorDropdownOpen ? 'rotate-180' : ''}`} />
+                         </button>
 
-          {/* ETAPA 4: DOCUMENTOS */}
-          {step === 4 && (
-            <div className="space-y-8 animate-in slide-in-from-right duration-300">
-               <h3 className="text-xl font-black text-slate-900 border-b border-slate-100 pb-4">Documentos Clínicos</h3>
-               
-               <p className="text-slate-500 text-sm font-medium">Adjunte documentos relevantes (exames, imagens, relatórios). Opcional mas recomendado para agilizar a regulação.</p>
+                         {isRegulatorDropdownOpen && (
+                            <div className="absolute top-full left-0 w-full bg-white border border-slate-200 shadow-xl max-h-[200px] overflow-y-auto z-50">
+                               <button 
+                                  onClick={toggleAllRegulators}
+                                  className="w-full text-left px-4 py-3 border-b border-slate-100 bg-slate-50 text-[10px] font-black uppercase text-blue-600 hover:bg-blue-100 transition-colors"
+                               >
+                                  {selectedRegulators?.length === AVAILABLE_REGULATORS.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                               </button>
+                               {AVAILABLE_REGULATORS.map(reg => (
+                                  <button 
+                                    key={reg.id}
+                                    onClick={() => toggleRegulator(reg.name)}
+                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-3 transition-colors"
+                                  >
+                                     {selectedRegulators?.includes(reg.name) 
+                                        ? <CheckSquare size={16} className="text-blue-600 shrink-0"/> 
+                                        : <Square size={16} className="text-slate-300 shrink-0"/>
+                                     }
+                                     <span className="text-[10px] font-bold uppercase text-slate-700">{reg.name}</span>
+                                  </button>
+                               ))}
+                            </div>
+                         )}
+                      </div>
 
-               <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center space-y-4 hover:bg-slate-100 transition-colors cursor-pointer" onClick={() => openDrawer('UploadDocumentDrawer', { requestId: 'NEW', type: 'Anexo Geral' })}>
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-slate-400">
-                     <UploadCloud size={32}/>
-                  </div>
-                  <div>
-                     <p className="text-sm font-bold text-slate-700">Clique para selecionar arquivos locais</p>
-                     <p className="text-xs text-slate-400 mt-1">PDF, JPG, PNG (máx. 10MB)</p>
-                  </div>
-               </div>
+                      {/* Selected Chips */}
+                      {selectedRegulators?.length > 0 && (
+                         <div className="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 border border-slate-100">
+                            {selectedRegulators.map(name => (
+                               <div key={name} className="px-3 py-1 bg-white border border-slate-200 rounded-sm text-[9px] font-black uppercase text-slate-600 flex items-center gap-2 shadow-sm">
+                                  {name} <button onClick={() => toggleRegulator(name)} className="hover:text-red-500"><X size={10}/></button>
+                               </div>
+                            ))}
+                         </div>
+                      )}
+                   </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button onClick={() => navigate('/aps/case/new/search')} className="p-4 rounded-xl border border-slate-200 flex items-center gap-3 hover:border-blue-500 hover:bg-blue-50 transition-all group shadow-sm">
-                     <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors"><Globe size={18}/></div>
-                     <div className="text-left">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Busca Técnica Federada</p>
-                     </div>
-                  </button>
-                  <button onClick={() => openModal('NotifyCitizenModal', { patient: selectedPatient?.name })} className="p-4 rounded-xl border border-slate-200 flex items-center gap-3 hover:border-amber-500 hover:bg-amber-50 transition-all group shadow-sm">
-                     <div className="p-2 bg-amber-100 text-amber-600 rounded-lg group-hover:bg-amber-600 group-hover:text-white transition-colors"><Smartphone size={18}/></div>
-                     <div className="text-left">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">App do Cidadão</p>
-                        <p className="text-xs font-bold text-slate-900">Solicitar envio pelo paciente</p>
-                     </div>
-                  </button>
-               </div>
+                   {/* Footer Assinatura */}
+                   <div className="pt-8 mt-10 border-t border-slate-200 flex justify-between items-end">
+                      <div className="text-[8px] text-emerald-600 font-black uppercase tracking-widest flex items-center gap-1">
+                         <Lock size={10}/> Assinado Digitalmente
+                         <br/>HASH: 0x864917515A...A94E
+                      </div>
+                      <div className="text-center">
+                         <div className="border-t border-slate-900 w-48 mb-1"></div>
+                         <p className="text-[10px] font-black uppercase">{user?.name}</p>
+                         <p className="text-[8px] font-bold text-slate-500 uppercase">{user?.role} - {user?.registryNumber}</p>
+                      </div>
+                   </div>
+                </div>
+            </section>
+         )}
 
-               {/* Lista de Anexos */}
-               {attachedDocs.length > 0 && (
-                  <div className="space-y-2 pt-4">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Arquivos Anexados ({attachedDocs.length})</p>
-                     {attachedDocs.map((doc, i) => (
-                        <div key={i} className="flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-300 transition-all">
-                           <div className="flex items-center gap-3 overflow-hidden">
-                              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><FileText size={14} /></div>
-                              <div className="overflow-hidden">
-                                 <span className="text-xs font-bold text-slate-700 truncate block">{doc.name}</span>
-                                 <span className="text-[9px] text-slate-400 uppercase tracking-wide">{doc.node || 'Upload Local'}</span>
-                              </div>
-                           </div>
-                           <button onClick={() => removeAttachedDoc(doc.id)} className="text-slate-300 hover:text-red-500 p-2"><X size={16}/></button>
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-          )}
-
-          {/* ETAPA 5: REVISÃO E ENVIO */}
-          {step === 5 && (
-            <div className="space-y-8 animate-in slide-in-from-right duration-300">
-               <h3 className="text-xl font-black text-slate-900 border-b border-slate-100 pb-4 no-print">Revisão e Confirmação</h3>
-               
-               <div className="bg-white border-2 border-slate-300 shadow-2xl p-12 max-w-4xl mx-auto relative font-serif text-slate-800">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-                     <Globe size={400} />
-                  </div>
-
-                  <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6 mb-8">
-                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center rounded">
-                           <Building2 size={32} />
-                        </div>
-                        <div>
-                           <h1 className="text-2xl font-black uppercase tracking-tight leading-none text-slate-900 font-sans">Solicitação de Regulação</h1>
-                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 font-sans">Sistema Único de Saúde • Federação Nacional</p>
-                        </div>
-                     </div>
-                     <div className="text-right">
-                        <p className="text-xs font-bold text-slate-500 uppercase font-sans">Data Emissão</p>
-                        <p className="text-lg font-black text-slate-900 font-sans">{new Date().toLocaleDateString()}</p>
-                     </div>
-                  </div>
-
-                  {/* Solicitante */}
-                  <div className="mb-8">
-                     <h3 className="text-[10px] font-black text-white bg-slate-900 px-3 py-1 uppercase tracking-widest w-fit mb-4 font-sans">1. Unidade Solicitante</h3>
-                     <div className="grid grid-cols-3 gap-6 text-xs uppercase border border-slate-200 p-4">
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">Profissional Solicitante</span>
-                           <span className="font-bold">{user?.name}</span>
-                        </div>
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">Registro / Cargo</span>
-                           <span className="font-bold">{user?.role} / {user?.registryNumber || 'N/A'}</span>
-                        </div>
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">Unidade (CNES)</span>
-                           <span className="font-bold">{user?.nodeName}</span>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Paciente */}
-                  <div className="mb-8">
-                     <h3 className="text-[10px] font-black text-white bg-slate-900 px-3 py-1 uppercase tracking-widest w-fit mb-4 font-sans">2. Identificação do Paciente</h3>
-                     <div className="grid grid-cols-4 gap-6 text-xs uppercase border border-slate-200 p-4">
-                        <div className="col-span-2">
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">Nome Completo</span>
-                           <span className="font-bold">{selectedPatient?.name}</span>
-                        </div>
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">CPF</span>
-                           <span className="font-bold font-mono">{selectedPatient?.cpf}</span>
-                        </div>
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans">Idade</span>
-                           <span className="font-bold">{calculateAge(selectedPatient?.birthDate)} anos</span>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Dados Clínicos & Urgência */}
-                  <div className="mb-8">
-                     <h3 className="text-[10px] font-black text-white bg-slate-900 px-3 py-1 uppercase tracking-widest w-fit mb-4 font-sans">3. Dados Clínicos e Classificação</h3>
-                     <div className="border border-slate-200 p-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-6">
-                           <div>
-                              <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans uppercase">Diagnóstico Principal</span>
-                              <span className="font-bold text-sm">
-                                {clinicalData.mainDiagnosis.code ? `${clinicalData.mainDiagnosis.code} - ` : ''}{clinicalData.mainDiagnosis.description}
-                              </span>
-                           </div>
-                           <div>
-                              <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans uppercase">Prioridade</span>
-                              <span className={`inline-block px-2 py-0.5 text-[10px] font-black font-sans uppercase border ${urgencyData.priority === 'EMERGÊNCIA' ? 'border-red-600 text-red-600' : 'border-blue-600 text-blue-600'}`}>
-                                 {urgencyData.priority}
-                              </span>
-                           </div>
-                        </div>
-
-                        {/* Diagnóstico Secundário (Condicional) - MOSTRADO SI EXISTE */}
-                        {(clinicalData.secondaryDiagnosis.code || clinicalData.secondaryDiagnosis.description) && (
-                           <div className="pt-2 border-t border-slate-100">
-                              <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans uppercase">Diagnóstico Secundário</span>
-                              <span className="font-bold text-sm text-slate-700">
-                                {clinicalData.secondaryDiagnosis.code ? `${clinicalData.secondaryDiagnosis.code} - ` : ''}{clinicalData.secondaryDiagnosis.description}
-                              </span>
-                           </div>
-                        )}
-
-                        <div>
-                           <span className="block font-bold text-slate-400 text-[9px] mb-1 font-sans uppercase">Resumo Clínico / Justificativa</span>
-                           <p className="text-sm font-medium leading-relaxed italic bg-slate-50 p-3 border border-slate-100">
-                              "{clinicalData.notes}"
-                           </p>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Direcionamento */}
-                  <div className="mb-12">
-                     <h3 className="text-[10px] font-black text-white bg-slate-900 px-3 py-1 uppercase tracking-widest w-fit mb-4 font-sans">4. Direcionamento (Nós Reguladores)</h3>
-                     
-                     <div className="border border-slate-200 p-4 bg-slate-50">
-                        <div className="mb-4 font-sans">
-                           <button 
-                              onClick={() => setIsRegulatorDropdownOpen(!isRegulatorDropdownOpen)}
-                              className="w-full p-3 bg-white border border-slate-300 text-left text-xs font-bold flex justify-between items-center hover:border-slate-400 transition-colors"
-                           >
-                              <span>{selectedRegulators.length > 0 ? `${selectedRegulators.length} Centrais Selecionadas` : 'Selecionar Centrais de Destino...'}</span>
-                              <ChevronDown size={14}/>
-                           </button>
-                           {isRegulatorDropdownOpen && (
-                              <div className="bg-white border border-slate-300 mt-1 max-h-[150px] overflow-y-auto shadow-lg relative z-10">
-                                 <button onClick={toggleAllRegulators} className="w-full text-left p-2 text-[10px] font-black uppercase text-blue-600 border-b border-slate-100 hover:bg-slate-50">
-                                    {selectedRegulators.length === regulators.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
-                                 </button>
-                                 {regulators.map(r => (
-                                    <div key={r.id} onClick={() => toggleRegulator(r.id)} className="flex items-center gap-2 p-2 hover:bg-slate-50 cursor-pointer">
-                                       <div className={`w-4 h-4 border flex items-center justify-center ${selectedRegulators.includes(r.id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300'}`}>
-                                          {selectedRegulators.includes(r.id) && <CheckSquare size={10}/>}
-                                       </div>
-                                       <span className="text-[10px] font-bold uppercase">{r.name}</span>
-                                    </div>
-                                 ))}
-                              </div>
-                           )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                           {selectedRegulators.length === 0 && <span className="text-xs text-slate-400 italic">Nenhum destino selecionado. Obrigatório.</span>}
-                           {selectedRegulators.map(id => {
-                              const reg = regulators.find(r => r.id === id);
-                              return (
-                                 <div key={id} className="flex items-center gap-2 bg-white border border-slate-300 px-3 py-1 text-[10px] font-black uppercase shadow-sm">
-                                    {reg?.name} <button onClick={() => toggleRegulator(id)}><X size={10} className="hover:text-red-500"/></button>
-                                 </div>
-                              );
-                           })}
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Assinatura */}
-                  <div className="pt-8 border-t-2 border-slate-900 flex justify-between items-end font-sans mt-auto">
-                     <div>
-                        <div className="flex items-center gap-2 text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">
-                           <Lock size={12}/> Assinado Digitalmente
-                        </div>
-                        <p className="font-mono text-[10px] text-slate-400">HASH: 0x{Math.random().toString(16).substring(2, 12).toUpperCase()}...{Math.random().toString(16).substring(2, 6).toUpperCase()}</p>
-                        <p className="font-mono text-[10px] text-slate-400">TIMESTAMP: {new Date().toISOString()}</p>
-                     </div>
-                     <div className="text-center">
-                        <div className="h-10 border-b border-slate-400 w-64 mb-2"></div>
-                        <p className="text-xs font-black uppercase text-slate-900">{user?.name}</p>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase">{user?.registryNumber || 'CRM/COREN NÃO INFORMADO'}</p>
-                     </div>
-                  </div>
-               </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* FOOTER DE AÇÕES */}
-        <div className="p-8 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
-           {step > 1 ? (
-             <button onClick={() => setStep(step - 1)} className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
-                <ChevronLeft size={16}/> Anterior
-             </button>
-           ) : <div/>}
-
-           {step < 5 ? (
-             <button 
-                onClick={() => setStep(step + 1)} 
-                disabled={step === 1 && !selectedPatient}
-                className={`px-8 py-4 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all flex items-center gap-2 ${step === 1 && !selectedPatient ? 'bg-slate-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'}`}
-             >
-                Próximo <ChevronRight size={16}/>
-             </button>
-           ) : (
-             <button 
-                onClick={handleCreateCase}
-                disabled={loading || selectedRegulators.length === 0}
-                className={`px-10 py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95 ${(selectedRegulators.length === 0 || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-             >
-                {loading ? <Loader2 className="animate-spin" size={18}/> : <><CheckCircle size={18}/> Protocolar e Enviar</>}
-             </button>
-           )}
-        </div>
       </div>
+
+      {/* FOOTER ACTIONS */}
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 shadow-2xl z-50">
+         <div className="max-w-5xl mx-auto flex justify-between items-center">
+            {step > 1 ? (
+               <button onClick={prevStep} className="px-6 py-3 text-slate-500 font-bold uppercase text-xs tracking-widest hover:bg-slate-100 rounded-sm transition-all flex items-center gap-2">
+                  <ChevronLeft size={16}/> Voltar
+               </button>
+            ) : <div></div>}
+            
+            {step < 5 ? (
+               <button onClick={nextStep} className="px-8 py-3 bg-slate-900 text-white font-black uppercase text-xs tracking-widest hover:bg-slate-800 rounded-sm transition-all shadow-lg flex items-center gap-2">
+                  Próximo Passo <ChevronRight size={16}/>
+               </button>
+            ) : (
+               <div className="flex gap-4">
+                  <button onClick={() => window.print()} className="px-6 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase text-xs tracking-widest hover:bg-slate-50 rounded-sm transition-all flex items-center gap-2">
+                     <Printer size={16}/> Imprimir Rascunho
+                  </button>
+                  <button onClick={handleSubmit} className="px-10 py-3 bg-blue-700 text-white font-black uppercase text-xs tracking-widest hover:bg-blue-800 rounded-sm transition-all shadow-xl flex items-center gap-2">
+                     <Send size={16}/> Assinar e Enviar
+                  </button>
+               </div>
+            )}
+         </div>
+      </div>
+
     </div>
   );
 };

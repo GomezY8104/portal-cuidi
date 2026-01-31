@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
@@ -123,6 +124,10 @@ export const UpaCaseDetailPage: React.FC = () => {
             });
         } else if (storedCase.stage === 'OBSERVATION') {
             setStatus('UNDER_OBSERVATION');
+        } else if (storedCase.stage === 'REGULATION') {
+            setStatus('NEEDS_REGULATION');
+        } else if (storedCase.stage === 'DISCHARGED') {
+            setStatus('DISCHARGED');
         } else {
             setStatus('MEDICAL_ATTENTION');
         }
@@ -144,7 +149,7 @@ export const UpaCaseDetailPage: React.FC = () => {
         const mock = MOCK_PATIENTS[mockIndex];
         
         setPatient({
-          id: mock.id,
+          id: id || mock.id, // Usa o ID da URL se disponível para manter consistência
           name: mock.name,
           socialName: mock.socialName,
           age: new Date().getFullYear() - parseInt(mock.birthDate.split('-')[0]),
@@ -259,6 +264,37 @@ export const UpaCaseDetailPage: React.FC = () => {
     setTimeline(prev => [{ time, event, user: user?.name || 'Profissional', obs }, ...prev]);
   };
 
+  // HELPERS PARA ATUALIZAR STATUS NO STORE (OU CRIAR SE FOR MOCK)
+  const ensureCaseInStore = (newStage: any, newRisk?: string, customStatus?: string) => {
+    if (!id || id === 'new') return;
+    
+    // Verifica se já existe
+    const exists = upaQueue.find(c => c.id === id);
+    if (exists) {
+        updateUpaCaseStatus(id, newStage, newRisk, customStatus);
+    } else if (patient) {
+        // Se é um Mock que ainda não está no store, cria-o agora com o status atualizado
+        addUpaCase({
+            id: id,
+            patientName: patient.name,
+            socialName: patient.socialName,
+            cpf: patient.doc,
+            cns: patient.cns,
+            age: patient.age,
+            gender: patient.sex,
+            phone: patient.phone,
+            emergencyContact: patient.emergencyContact,
+            address: patient.address,
+            bloodType: patient.bloodType,
+            arrival: patient.arrival,
+            risk: newRisk || triage.risk,
+            stage: newStage,
+            status: customStatus || (newStage === 'DISCHARGED' ? 'Alta Médica' : 'Em Atendimento'),
+            complaint: triage.symptoms || 'Atendimento Mock'
+        });
+    }
+  };
+
   const handleSaveTriage = () => {
     if (!triage.pa || !triage.fc || triage.risk === 'INDEFINIDO') {
       alert('Preencha os Sinais Vitais e a Classificação de Risco Manchester para concluir.');
@@ -269,7 +305,7 @@ export const UpaCaseDetailPage: React.FC = () => {
     addTimelineEvent('TRIAGEM_CONCLUIDA', `Risco: ${triage.risk} | PA: ${triage.pa}`);
     
     setStatus('MEDICAL_ATTENTION'); 
-    if (id && id !== 'new') updateUpaCaseStatus(id, 'MEDICAL', triage.risk);
+    ensureCaseInStore('MEDICAL', triage.risk);
   };
 
   const handleAddEvolution = () => {
@@ -292,15 +328,25 @@ export const UpaCaseDetailPage: React.FC = () => {
     });
   };
 
-  // DECISION HANDLERS USANDO medicalAssessment
+  // DECISION HANDLERS - ATUALIZAM O STORE GLOBAL
   const handleDischarge = () => {
     if (!medicalAssessment.cid) return alert('Obrigatório informar diagnóstico de alta (CID).');
+    
     if (confirm('Confirmar ALTA MÉDICA deste paciente?')) {
-      setStatus('DISCHARGED');
-      if (id && id !== 'new') updateUpaCaseStatus(id, 'DISCHARGED');
-      addTimelineEvent('ALTA_UPA', `Diagnóstico: ${medicalAssessment.cid}`);
-      setDecisionMode('NONE');
-      setTimeout(() => navigate('/upa'), 1000); 
+      setLoading(true);
+      
+      const dischargeStatus = `ALTA - CID: ${medicalAssessment.cid}`;
+      
+      addTimelineEvent('ALTA_MEDICA', `Diagnóstico: ${medicalAssessment.cid} - ${medicalAssessment.cidDesc}. Orient: ${dischargeExtras.instructions}`);
+      
+      setTimeout(() => {
+          setStatus('DISCHARGED');
+          ensureCaseInStore('DISCHARGED', undefined, dischargeStatus);
+          
+          setDecisionMode('NONE');
+          setLoading(false);
+          navigate('/upa');
+      }, 1500); 
     }
   };
 
@@ -309,6 +355,8 @@ export const UpaCaseDetailPage: React.FC = () => {
         alert('É obrigatório preencher as Notas Clínicas e o Diagnóstico Principal antes de solicitar Vaga Zero.');
         return;
     }
+    ensureCaseInStore('REGULATION', 'VERMELHO', 'Aguardando Vaga Zero');
+    
     openModal('EmergencyRequestModal', { 
         caseId: id,
         onSuccess: () => navigate('/upa')
@@ -320,12 +368,14 @@ export const UpaCaseDetailPage: React.FC = () => {
         alert('Informe o CID Principal antes de iniciar o protocolo.');
         return;
     }
+    ensureCaseInStore('REGULATION', undefined, 'Em Regulação');
     navigate('/upa/new-case');
   };
 
   const handleObservation = () => {
     setStatus('UNDER_OBSERVATION');
-    if (id && id !== 'new') updateUpaCaseStatus(id, 'OBSERVATION');
+    ensureCaseInStore('OBSERVATION', undefined, 'Em Observação');
+    
     addTimelineEvent('MANTER_OBSERVACAO', 'Paciente mantido em leito de observação');
     setDecisionMode('NONE');
     setTimeout(() => navigate('/upa'), 1000);
@@ -640,7 +690,7 @@ export const UpaCaseDetailPage: React.FC = () => {
                      {decisionMode === 'DISCHARGE' && (
                         <div className="space-y-3 pt-3 border-t border-slate-200 animate-in fade-in bg-green-50/50 p-3 rounded-sm -mx-2">
                            <div className="space-y-1"><label className="text-[9px] font-black uppercase text-slate-500">Orientações de Alta</label><textarea value={dischargeExtras.instructions} onChange={e => setDischargeExtras({...dischargeExtras, instructions: e.target.value})} className="w-full p-2 border border-slate-300 rounded-sm text-xs h-16 resize-none outline-none bg-white" placeholder="Receita, repouso, retorno..." /></div>
-                           <button onClick={handleDischarge} className="w-full py-3 bg-green-600 text-white font-black text-xs uppercase rounded-sm hover:bg-green-700 shadow-sm">Confirmar Alta</button>
+                           <button onClick={handleDischarge} disabled={loading} className="w-full py-3 bg-green-600 text-white font-black text-xs uppercase rounded-sm hover:bg-green-700 shadow-sm flex items-center justify-center gap-2">{loading ? <Loader2 className="animate-spin" size={14}/> : 'Confirmar Alta'}</button>
                         </div>
                      )}
                      

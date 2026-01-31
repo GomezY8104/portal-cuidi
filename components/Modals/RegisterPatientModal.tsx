@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useNavigate } from 'react-router-dom';
 import { X, UserPlus, Save, Loader2, MapPin, Hash, User, Phone, Heart, AlertCircle } from 'lucide-react';
 
 export const RegisterPatientModal: React.FC = () => {
-  const { closeModal, addUpaCase } = useAppStore();
+  const { closeModal, addUpaCase, modalData } = useAppStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
@@ -37,8 +38,35 @@ export const RegisterPatientModal: React.FC = () => {
     setLoading(true);
 
     setTimeout(() => {
-      const newCaseId = `UPA-NEW-${Math.floor(Math.random() * 10000)}`;
+      // LÓGICA CONDICIONAL: 
+      // Se houver um callback 'onPatientRegistered', estamos no fluxo APS (apenas cadastro).
+      // Caso contrário, assumimos fluxo de Recepção UPA (cria caso na fila).
       
+      if (modalData?.onPatientRegistered) {
+          const newPatient = {
+            id: `P-${Math.floor(Math.random() * 10000)}`,
+            name: formData.name,
+            socialName: formData.socialName,
+            cpf: formData.cpf,
+            cns: formData.cns,
+            birthDate: formData.birthDate,
+            age: calculateAge(formData.birthDate), // Add calculated age for consistency
+            gender: formData.gender,
+            phone: formData.phone,
+            emergencyContact: formData.emergencyContact,
+            address: formData.address,
+            bloodType: formData.bloodType
+          };
+          
+          modalData.onPatientRegistered(newPatient);
+          setLoading(false);
+          closeModal();
+          // NÃO NAVEGAR PARA /UPA
+          return;
+      }
+
+      // FLUXO PADRÃO UPA (ADMISSÃO)
+      const newCaseId = `UPA-NEW-${Math.floor(Math.random() * 10000)}`;
       addUpaCase({
         id: newCaseId,
         patientName: formData.name,
@@ -60,9 +88,11 @@ export const RegisterPatientModal: React.FC = () => {
 
       setLoading(false);
       closeModal();
-      navigate('/upa'); // Navega a la lista de trabajo
+      navigate('/upa'); // Navega a la lista de trabajo UPA
     }, 1000);
   };
+
+  const isApsContext = !!modalData?.onPatientRegistered;
 
   return (
     <div className="bg-white flex flex-col h-[90vh]">
@@ -72,8 +102,12 @@ export const RegisterPatientModal: React.FC = () => {
             <UserPlus size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Novo Cadastro SUS</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Recepção UPA • Dados Completos</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {isApsContext ? 'Cadastrar Paciente' : 'Novo Cadastro SUS'}
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                {isApsContext ? 'Base Nacional de Saúde' : 'Recepção UPA • Dados Completos'}
+            </p>
           </div>
         </div>
         <button onClick={closeModal} className="p-2 hover:bg-white rounded-full text-slate-400 transition-colors"><X size={24}/></button>
@@ -237,7 +271,7 @@ export const RegisterPatientModal: React.FC = () => {
           disabled={loading}
           className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
         >
-          {loading ? <Loader2 className="animate-spin" size={20}/> : <><Save size={20}/> Salvar e Confirmar Admissão</>}
+          {loading ? <Loader2 className="animate-spin" size={20}/> : <><Save size={20}/> {isApsContext ? 'Salvar Paciente na Base' : 'Salvar e Confirmar Admissão'}</>}
         </button>
       </div>
     </div>
