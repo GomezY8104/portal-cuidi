@@ -20,6 +20,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('cuidi_user_session');
     navigate('/login');
   };
 

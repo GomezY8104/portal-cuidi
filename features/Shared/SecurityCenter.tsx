@@ -15,6 +15,7 @@ export const SecurityCenterPage: React.FC = () => {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('cuidi_user_session');
     navigate('/login');
   };
 

@@ -1,16 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
 
-const getAIClient = () => {
-  // Use process.env.API_KEY exclusively as per guidelines.
-  const key = process.env.API_KEY;
-  
-  if (!key || key.includes('PLACEHOLDER')) {
-    console.error("API Key inválida ou não encontrada.");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey: key });
-};
 
 // Contexto técnico da API (Documentação Mockada para a IA)
 const API_DOCS_CONTEXT = `
@@ -50,39 +39,16 @@ export const sendFederationMessage = async (
   mode: 'API_SUPPORT' | 'DATA_INSIGHTS', 
   currentSystemData?: any
 ) => {
-  const ai = getAIClient();
-  
-  if (!ai) {
-    return "⚠️ **Erro de Configuração:** A chave de API do Google Gemini não foi detectada.\n\nPara ativar o Copiloto, adicione a variável de ambiente `API_KEY` nas configurações do projeto.";
-  }
-
-  let systemInstruction = '';
-
-  if (mode === 'API_SUPPORT') {
-    systemInstruction = API_DOCS_CONTEXT;
-  } else {
-    // Injeta os dados atuais no prompt para a IA analisar
-    const dataString = JSON.stringify(currentSystemData || {}, null, 2);
-    systemInstruction = DATA_ANALYST_CONTEXT.replace('{{CURRENT_DATA}}', dataString);
-  }
-
   try {
-    // Usamos generateContent para uma resposta única e rápida baseada no contexto injetado
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Modelo rápido e eficiente para chat
-      contents: message,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.4 // Temperatura baixa para respostas mais precisas/técnicas
-      }
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, mode, currentSystemData })
     });
-
-    return response.text;
-  } catch (error: any) {
+    const data = await response.json();
+    return data.text;
+  } catch (error) {
     console.error("Erro no Assistente CUIDI:", error);
-    if (error.message && (error.message.includes('API key') || error.message.includes('403'))) {
-        return "⚠️ Erro de Autenticação: Sua chave de API parece ser inválida, expirou ou não tem permissões.";
-    }
     return "Desculpe, o serviço de inteligência federada está temporariamente indisponível. Tente novamente em instantes.";
   }
 };
