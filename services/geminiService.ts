@@ -45,8 +45,26 @@ export const sendFederationMessage = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, mode, currentSystemData })
     });
+
+    // Mejor manejo de error según código HTTP
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return "⚠️ Erro de Autenticação: Sua chave de API parece ser inválida, expirou ou não tem permissões.";
+      }
+      if (response.status === 400) {
+        return "⚠️ Erro de Configuração: A chave de API do Google Gemini não foi detectada ou está mal configurada.\n\nPara ativar o Copiloto, adicione a variável de ambiente `API_KEY` nas configurações do projeto.";
+      }
+      return "Desculpe, o serviço de inteligência federada está temporariamente indisponível. Tente novamente em instantes.";
+    }
+
+    // Leer respuesta JSON
     const data = await response.json();
+    // Si la API backend devuelve un error específico en el cuerpo
+    if (data?.error) {
+      return `⚠️ Erro: ${data.error}`;
+    }
     return data.text;
+
   } catch (error) {
     console.error("Erro no Assistente CUIDI:", error);
     return "Desculpe, o serviço de inteligência federada está temporariamente indisponível. Tente novamente em instantes.";
